@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito, Inter } from "next/font/google";
+import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -17,7 +18,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Focusie — Focus feels better together",
   description:
-    "A cozy, kawaii, pastel study-with-friends web app. Track focused sessions, stay accountable, and study together.",
+    "A cozy, kawaii, pastel study-with-friends web app. Track focused sessions, stay accountable with personal study days, and cheer on each other every day.",
 };
 
 export default function RootLayout({
@@ -28,10 +29,30 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${nunito.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-cream text-plum selection:bg-blush selection:text-plum">
-        {children}
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('focusie-theme');
+                  var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches) || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col font-sans bg-[#FFFDF9] dark:bg-[#171321] text-[#4A3E4D] dark:text-[#F8F1FF] selection:bg-[#FFEBF0] dark:selection:bg-[#4A263D] selection:text-[#FF729F]">
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
