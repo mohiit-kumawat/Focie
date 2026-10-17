@@ -66,7 +66,7 @@ export const CtaBannerSection: React.FC = () => {
             </h2>
 
             <p className="mt-3 sm:mt-4 text-sm sm:text-base text-[#6E5D70] dark:text-[#B9AEC9] max-w-md font-medium leading-relaxed">
-              Join Focusie and turn your study time into something special
+              Join Focie and turn your study time into something special
               — together with your friends.
             </p>
 

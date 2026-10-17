@@ -27,13 +27,13 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToTop }) => {
             <button
               onClick={handleScrollToTop}
               className="flex items-center gap-2.5 group cursor-pointer focus:outline-none mb-4 text-left"
-              aria-label="Focusie - Scroll to top"
+              aria-label="Focie - Scroll to top"
             >
               <div className="relative w-8 h-8 flex items-center justify-center">
                 <FocusieLogo size={30} />
               </div>
               <span className="font-display text-2xl font-extrabold text-[#4A3E4D] dark:text-[#F8F1FF] group-hover:text-[#FF729F] transition-colors">
-                Focusie
+                Focie
               </span>
             </button>
 
@@ -96,7 +96,7 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToTop }) => {
                   href="/register"
                   className="px-4 py-2 text-xs font-bold text-white bg-[#FF729F] hover:bg-[#F25577] dark:hover:bg-[#FF5D8F] rounded-full shadow-2xs"
                 >
-                  Join Focusie
+                  Join Focie
                 </Link>
                 <button
                   onClick={handleScrollToTop}
@@ -111,13 +111,13 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToTop }) => {
 
         {/* Bottom Credits & Copyright */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <p>© 2026 Focusie. All rights reserved. Crafted with care for study besties.</p>
+          <p>© 2026 Focie. All rights reserved. Crafted with care for study besties.</p>
           <div className="flex items-center gap-5">
             <button
               onClick={handleScrollToTop}
               className="text-[#FF729F] hover:underline font-bold cursor-pointer"
             >
-              Focusie ⭐
+              Focie ⭐
             </button>
             <span>•</span>
             <span>Midnight Kawaii & Sunny Study</span>

@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Focusie — Focus feels better together",
+  title: "Focie — Focus feels better together",
   description:
     "A cozy, kawaii, pastel study-with-friends web app. Track focused sessions, stay accountable with personal study days, and cheer on each other every day.",
 };

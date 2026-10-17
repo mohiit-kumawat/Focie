@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export interface Profile {
+export type Profile = {
   id: string;
   username: string;
   display_name: string | null;
@@ -15,21 +15,21 @@ export interface Profile {
   preferences?: Json;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface StudyDaySettings {
+export type StudyDaySettings = {
   id: string;
   user_id: string;
   timezone: string;
-  day_start_time: string; // e.g. "06:00"
+  day_start_time: string; // e.g. "06:00:00"
   effective_from: string;
   created_at: string;
   updated_at: string;
-}
+};
 
-export type SessionState = 'active' | 'paused' | 'completed';
+export type SessionState = "active" | "paused" | "completed";
 
-export interface StudySession {
+export type StudySession = {
   id: string;
   user_id: string;
   state: SessionState;
@@ -40,9 +40,9 @@ export interface StudySession {
   notes?: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface StudySessionSegment {
+export type StudySessionSegment = {
   id: string;
   session_id: string;
   user_id: string;
@@ -50,34 +50,37 @@ export interface StudySessionSegment {
   ended_at: string;
   duration_seconds: number;
   created_at: string;
-}
+};
 
-export interface Friendship {
+export type Friendship = {
   id: string;
   requester_id: string;
   recipient_id: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+  status: "pending" | "accepted" | "rejected" | "blocked";
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
         Insert: Partial<Profile> & { id: string; username: string };
         Update: Partial<Profile>;
+        Relationships: [];
       };
       study_day_settings: {
         Row: StudyDaySettings;
         Insert: Partial<StudyDaySettings> & { user_id: string };
         Update: Partial<StudyDaySettings>;
+        Relationships: [];
       };
       study_sessions: {
         Row: StudySession;
         Insert: Partial<StudySession> & { user_id: string; started_at: string };
         Update: Partial<StudySession>;
+        Relationships: [];
       };
       study_session_segments: {
         Row: StudySessionSegment;
@@ -89,12 +92,18 @@ export interface Database {
           duration_seconds: number;
         };
         Update: Partial<StudySessionSegment>;
+        Relationships: [];
       };
       friendships: {
         Row: Friendship;
         Insert: Partial<Friendship> & { requester_id: string; recipient_id: string };
         Update: Partial<Friendship>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
-}
+};

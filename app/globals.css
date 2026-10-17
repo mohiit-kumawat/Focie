@@ -104,6 +104,104 @@ body {
   transform: translateY(-2px) scale(1.04);
 }
 
+/* ========================================================
+   Fumi Animated Auth Companion Keyframes & Utilities
+   ======================================================== */
+@keyframes fumi-spring-pop {
+  0% {
+    transform: translateY(75px) scale(0.82);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-10px) scale(1.04);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(3px) scale(0.98);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fumi-wave-action {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  20% {
+    transform: translateY(-5px) rotate(-3deg);
+  }
+  40% {
+    transform: translateY(0) rotate(3deg);
+  }
+  60% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+  80% {
+    transform: translateY(0) rotate(1deg);
+  }
+}
+
+@keyframes fumi-resting-breath {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.015);
+  }
+}
+
+@keyframes bubble-pop-in {
+  0% {
+    transform: scale(0.4) translateY(12px);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.08) translateY(-3px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bubble-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3.5px);
+  }
+}
+
+.animate-fumi-pop {
+  animation: fumi-spring-pop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-fumi-wave {
+  animation: fumi-wave-action 1.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-fumi-rest {
+  animation: fumi-resting-breath 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-bubble-in {
+  animation: bubble-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-bubble-float {
+  animation: bubble-float 2.5s ease-in-out infinite;
+  will-change: transform;
+}
+
 /* Accessible reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   .hover-lift,
@@ -111,8 +209,15 @@ body {
   .hover-lift-pill,
   .hover-lift:hover,
   .hover-lift-sm:hover,
-  .hover-lift-pill:hover {
+  .hover-lift-pill:hover,
+  .animate-fumi-pop,
+  .animate-fumi-wave,
+  .animate-fumi-rest,
+  .animate-bubble-in,
+  .animate-bubble-float {
     transform: none !important;
     transition: none !important;
+    animation: none !important;
   }
 }
+

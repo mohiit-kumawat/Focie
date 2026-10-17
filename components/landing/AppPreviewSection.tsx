@@ -80,7 +80,7 @@ export const AppPreviewSection: React.FC = () => {
             </h2>
 
             <p className="mt-4 text-sm sm:text-base text-[#7D6E7E] dark:text-[#B9AEC9] leading-relaxed">
-              Focusie turns your study time into a shared journey. Stay
+              Focie turns your study time into a shared journey. Stay
               motivated with your friends, earn rewards, and create your own
               cozy study world.
             </p>
@@ -139,7 +139,7 @@ export const AppPreviewSection: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div className="hover-lift-pill flex items-center gap-1.5 font-display font-extrabold text-[#4A3E4D] dark:text-[#F8F1FF] cursor-pointer">
                     <span className="text-sm">⭐</span>
-                    <span>Focusie</span>
+                    <span>Focie</span>
                   </div>
 
                   <div className="hover-lift-pill hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-[#241D33] border border-[#EBE0D8] dark:border-[#40354F] rounded-full text-[#4A3E4D] dark:text-[#F8F1FF] font-bold cursor-pointer">

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { usernameSchema, studyDaySettingsSchema } from "@/lib/validations/auth";
+import {
+  usernameSchema,
+  studyDaySettingsSchema,
+  loginSchema,
+  registerSchema,
+} from "@/lib/validations/auth";
 
 describe("Validation Schemas (SPEC FR-01 & FR-05)", () => {
   describe("Username validation", () => {
@@ -52,4 +57,45 @@ describe("Validation Schemas (SPEC FR-01 & FR-05)", () => {
       ).toThrow();
     });
   });
+
+  describe("Login validation", () => {
+    it("accepts valid email and password", () => {
+      const valid = { email: "mohit@example.com", password: "password123" };
+      expect(loginSchema.parse(valid)).toEqual(valid);
+    });
+
+    it("rejects invalid email formats", () => {
+      expect(() =>
+        loginSchema.parse({ email: "invalid-email", password: "password123" })
+      ).toThrow();
+    });
+
+    it("rejects short password", () => {
+      expect(() =>
+        loginSchema.parse({ email: "mohit@example.com", password: "123" })
+      ).toThrow();
+    });
+  });
+
+  describe("Register validation", () => {
+    it("accepts valid registration payload", () => {
+      const valid = {
+        email: "mohit@example.com",
+        password: "secretpassword",
+        confirmPassword: "secretpassword",
+      };
+      expect(registerSchema.parse(valid)).toEqual(valid);
+    });
+
+    it("rejects mismatched confirm password", () => {
+      expect(() =>
+        registerSchema.parse({
+          email: "mohit@example.com",
+          password: "secretpassword",
+          confirmPassword: "differentpassword",
+        })
+      ).toThrow();
+    });
+  });
 });
+

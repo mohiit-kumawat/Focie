@@ -28,13 +28,13 @@ export const Header: React.FC<HeaderProps> = ({ onScrollToTop }) => {
         <button
           onClick={handleLogoClick}
           className="flex items-center gap-2.5 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF729F] rounded-xl px-2 py-1 transition-transform active:scale-95 text-left"
-          aria-label="Focusie - Scroll to top"
+          aria-label="Focie - Scroll to top"
         >
           <div className="relative w-9 h-9 flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
             <FocusieLogo size={34} />
           </div>
           <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF] group-hover:text-[#FF729F] transition-colors">
-            Focusie
+            Focie
           </span>
         </button>
 
