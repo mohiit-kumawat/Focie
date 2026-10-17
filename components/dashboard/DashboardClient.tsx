@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FumiMascot } from "@/components/ui/FumiMascot";
 import { StudyTimerWidget } from "@/components/dashboard/StudyTimerWidget";
+import { FriendsPresenceWidget } from "@/components/dashboard/FriendsPresenceWidget";
 import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
 import type { Profile, StudyDaySettings } from "@/types/database";
 
@@ -117,10 +118,18 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
           </div>
         </div>
 
-        {/* Interactive Live Study Timer Widget */}
-        <section className="w-full">
-          <StudyTimerWidget />
-        </section>
+        {/* Live Study Desk & Friends Presence Room */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Main Focus Desk (7 cols) */}
+          <section className="lg:col-span-7 w-full">
+            <StudyTimerWidget />
+          </section>
+
+          {/* Real-time Study Buddies Presence Room (5 cols) */}
+          <aside className="lg:col-span-5 w-full">
+            <FriendsPresenceWidget />
+          </aside>
+        </div>
 
         {/* User Configuration & Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -182,13 +191,13 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
                 Protected & Active
               </span>
               <p className="text-[11px] text-[#A49AAB]">
-                Only you have read/write access to your private profile & study data.
+                Only you and your accepted buddies have authorized access.
               </p>
             </div>
           </Card>
         </div>
 
-        {/* Phase Roadmap Note */}
+        {/* Phase Milestone Note */}
         <Card variant="lavender" className="p-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 relative shrink-0">
@@ -202,10 +211,10 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             </div>
             <div>
               <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1">
-                Next in Phase 2 Part 3: Real-Time Friends & Live Study Presence!
+                Phase 2 Live: Cozy Study Sync & Real-Time Friends! 🌸
               </h4>
               <p className="text-xs text-[#786C7B] dark:text-[#C5BAD3] leading-relaxed">
-                Your live study timer with server-authoritative timestamps is now live! In the upcoming Part 3, we connect Supabase Realtime WebSockets and friend requests so you and your friends can see each other studying together live.
+                Your live study desk and real-time buddy room are active! You can now start Pomodoro or Flow sessions, invite study partners, and see each other focusing live over Supabase Realtime WebSockets.
               </p>
             </div>
           </div>
