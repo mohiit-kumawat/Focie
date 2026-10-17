@@ -28,11 +28,15 @@ export type StudyDaySettings = {
 };
 
 export type SessionState = "active" | "paused" | "completed";
+export type SessionMode = "pomodoro" | "stopwatch";
 
 export type StudySession = {
   id: string;
   user_id: string;
   state: SessionState;
+  mode: SessionMode;
+  target_minutes: number;
+  subject_tag: string;
   started_at: string;
   paused_at: string | null;
   ended_at: string | null;
