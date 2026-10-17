@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 
+export const instant = false;
+
 export default async function DashboardPage() {
   await connection();
 

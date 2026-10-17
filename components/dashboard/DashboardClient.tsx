@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FumiMascot } from "@/components/ui/FumiMascot";
+import { StudyTimerWidget } from "@/components/dashboard/StudyTimerWidget";
 import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
 import type { Profile, StudyDaySettings } from "@/types/database";
 
@@ -91,13 +92,13 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             <div className="space-y-3 text-center md:text-left">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-black/30 text-xs font-bold text-[#FF729F] border border-[#FF729F]/30 shadow-xs">
                 <Sparkles className="w-3 h-3" />
-                Phase 1 Authenticated
+                Phase 2 Live · Cozy Study Sync ✨
               </span>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF]">
                 Welcome home, {displayName}! 🌸
               </h1>
               <p className="text-sm md:text-base text-[#786C7B] dark:text-[#C5BAD3] max-w-lg">
-                Your cozy sanctuary is all set up with Row Level Security. Fumi is ready to study by your side!
+                Your cozy study desk is open. Start a focus session below, and Fumi will keep you company!
               </p>
               <div className="pt-2">
                 <a
@@ -115,6 +116,11 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             </div>
           </div>
         </div>
+
+        {/* Interactive Live Study Timer Widget */}
+        <section className="w-full">
+          <StudyTimerWidget />
+        </section>
 
         {/* User Configuration & Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -196,10 +202,10 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             </div>
             <div>
               <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1">
-                Coming in Phase 2: Live Study Rooms & Friends!
+                Next in Phase 2 Part 3: Real-Time Friends & Live Study Presence!
               </h4>
               <p className="text-xs text-[#786C7B] dark:text-[#C5BAD3] leading-relaxed">
-                Authentication and your 24-hour study day baseline are now live! In the upcoming phase, we will add real-time study rooms, friend requests, and live presence indicator dots so you can study alongside your friends.
+                Your live study timer with server-authoritative timestamps is now live! In the upcoming Part 3, we connect Supabase Realtime WebSockets and friend requests so you and your friends can see each other studying together live.
               </p>
             </div>
           </div>
