@@ -8,11 +8,18 @@ import {
   stopStudySession,
   getActiveStudySession,
 } from "@/app/actions/session";
+import { soundEngine } from "@/lib/audio/chime";
 import type { StudySession, SessionMode } from "@/types/database";
 
 export interface UseStudyTimerOptions {
   onSessionComplete?: (session: StudySession) => void;
 }
+
+type TimerBroadcastMessage =
+  | { type: "SESSION_STARTED"; session: StudySession }
+  | { type: "SESSION_PAUSED"; session: StudySession }
+  | { type: "SESSION_RESUMED"; session: StudySession }
+  | { type: "SESSION_STOPPED"; session: StudySession };
 
 export function useStudyTimer(options?: UseStudyTimerOptions) {
   const [session, setSession] = useState<StudySession | null>(null);
@@ -23,6 +30,8 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
   // Time tracking
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const activeSegmentStartRef = useRef<number | null>(null);
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+  const hasChimedTargetRef = useRef<boolean>(false);
 
   // Helper: Format seconds to MM:SS or HH:MM:SS
   const formatTime = (totalSeconds: number): string => {
@@ -60,6 +69,39 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
     }
   }, [session]);
 
+  // Cross-Tab Broadcast Channel Sync
+  useEffect(() => {
+    if (typeof window === "undefined" || !("BroadcastChannel" in window)) return;
+
+    const channel = new BroadcastChannel("focie-timer-sync");
+    broadcastChannelRef.current = channel;
+
+    channel.onmessage = (event: MessageEvent<TimerBroadcastMessage>) => {
+      const data = event.data;
+      if (!data) return;
+
+      if (data.type === "SESSION_STARTED" || data.type === "SESSION_RESUMED") {
+        setSession(data.session);
+        activeSegmentStartRef.current = Date.now();
+        hasChimedTargetRef.current = false;
+      } else if (data.type === "SESSION_PAUSED") {
+        setSession(data.session);
+        activeSegmentStartRef.current = null;
+        setElapsedSeconds(data.session.accumulated_seconds);
+      } else if (data.type === "SESSION_STOPPED") {
+        setSession(null);
+        activeSegmentStartRef.current = null;
+        setElapsedSeconds(0);
+        options?.onSessionComplete?.(data.session);
+      }
+    };
+
+    return () => {
+      channel.close();
+      broadcastChannelRef.current = null;
+    };
+  }, [options]);
+
   // Load active session from server on mount
   useEffect(() => {
     let isMounted = true;
@@ -73,7 +115,6 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
         if (active) {
           setSession(active);
           if (active.state === "active") {
-            // Segment start is updated_at or started_at
             const startTimestamp = new Date(
               active.paused_at ? active.updated_at : active.started_at
             ).getTime();
@@ -118,6 +159,16 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
     };
   }, [session, syncElapsedSeconds]);
 
+  // Pomodoro target reach chime
+  useEffect(() => {
+    if (!session || session.mode !== "pomodoro" || session.state !== "active") return;
+    const targetTotalSec = (session.target_minutes || 25) * 60;
+    if (elapsedSeconds >= targetTotalSec && !hasChimedTargetRef.current) {
+      hasChimedTargetRef.current = true;
+      soundEngine.playCompletionChime();
+    }
+  }, [session, elapsedSeconds]);
+
   // Actions
   const start = async (mode: SessionMode = "pomodoro", targetMinutes: number = 25, subject: string = "General Study") => {
     setActionLoading(true);
@@ -135,8 +186,14 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
       }
 
       activeSegmentStartRef.current = Date.now();
+      hasChimedTargetRef.current = false;
       setSession(result.session);
       setElapsedSeconds(0);
+      soundEngine.playStartChime();
+      broadcastChannelRef.current?.postMessage({
+        type: "SESSION_STARTED",
+        session: result.session,
+      });
     } catch {
       setError("An unexpected error occurred while starting the session.");
     } finally {
@@ -157,6 +214,10 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
       activeSegmentStartRef.current = null;
       setSession(result.session);
       setElapsedSeconds(result.session.accumulated_seconds);
+      broadcastChannelRef.current?.postMessage({
+        type: "SESSION_PAUSED",
+        session: result.session,
+      });
     } catch {
       setError("Failed to pause session.");
     } finally {
@@ -176,6 +237,11 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
       }
       activeSegmentStartRef.current = Date.now();
       setSession(result.session);
+      soundEngine.playStartChime(0.15);
+      broadcastChannelRef.current?.postMessage({
+        type: "SESSION_RESUMED",
+        session: result.session,
+      });
     } catch {
       setError("Failed to resume session.");
     } finally {
@@ -197,6 +263,11 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
       const finished = result.session;
       setSession(null);
       setElapsedSeconds(0);
+      soundEngine.playCompletionChime();
+      broadcastChannelRef.current?.postMessage({
+        type: "SESSION_STOPPED",
+        session: finished,
+      });
       options?.onSessionComplete?.(finished);
       return finished;
     } catch {
