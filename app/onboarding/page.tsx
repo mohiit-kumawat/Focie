@@ -13,31 +13,31 @@ const AVATAR_OPTIONS = [
   {
     id: "idle",
     name: "Cozy Sprout",
-    src: "/images/mascot/fumi-idle.webp",
+    src: "/images/mascot/fumi-idle.webp?v=2",
     desc: "Always smiling and positive",
   },
   {
     id: "studying",
     name: "Focus Master",
-    src: "/images/mascot/fumi-studying.webp",
+    src: "/images/mascot/fumi-studying.webp?v=2",
     desc: "Books open, deep in the zone",
   },
   {
     id: "headphones",
     name: "Lo-fi Listener",
-    src: "/images/mascot/fumi-headphones.webp",
+    src: "/images/mascot/fumi-headphones.webp?v=2",
     desc: "Beats on, distractions off",
   },
   {
     id: "sleeping",
     name: "Nap Champion",
-    src: "/images/mascot/fumi-sleeping.webp",
+    src: "/images/mascot/fumi-sleeping.webp?v=2",
     desc: "Rests hard, studies harder",
   },
   {
     id: "celebrating",
     name: "Party Sprout",
-    src: "/images/mascot/fumi-celebrating.webp",
+    src: "/images/mascot/fumi-celebrating.webp?v=2",
     desc: "Here to celebrate every streak",
   },
 ];
@@ -359,6 +359,7 @@ export default function OnboardingPage() {
                       src={avatar.src}
                       alt={avatar.name}
                       fill
+                      unoptimized
                       sizes="64px"
                       className="object-contain"
                     />

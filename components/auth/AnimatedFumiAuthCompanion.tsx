@@ -191,10 +191,11 @@ export const AnimatedFumiAuthCompanion: React.FC<AnimatedFumiAuthCompanionProps>
             transition={{ duration: 0.45, ease: "easeInOut" }}
           >
             <Image
-              src="/images/mascot/fumi-celebrating-clean.webp"
+              src="/images/mascot/fumi-celebrating-clean.webp?v=2"
               alt="Fumi happily waving hello"
               fill
               priority
+              unoptimized
               sizes="165px"
               className="object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.4)] select-none"
             />
@@ -208,10 +209,11 @@ export const AnimatedFumiAuthCompanion: React.FC<AnimatedFumiAuthCompanionProps>
             transition={{ duration: 0.48, ease: "easeInOut" }}
           >
             <Image
-              src="/images/mascot/fumi-white-clean.webp"
+              src="/images/mascot/fumi-white-clean.webp?v=2"
               alt="Fumi sweet cream mascot resting on the card"
               fill
               priority
+              unoptimized
               sizes="165px"
               className="object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.4)] select-none"
             />

@@ -12,8 +12,8 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    cream: "bg-white/80 dark:bg-[#241D33]/90 border-[#E9DFD8]/80 dark:border-[#40354F] text-[#4A3E4D] dark:text-[#F8F1FF]",
-    lavender: "bg-[#E7E0FA]/60 dark:bg-[#302641] border-[#E7E0FA] dark:border-[#40354F] text-[#4A3E4D] dark:text-[#F8F1FF]",
+    cream: "bg-white/90 dark:bg-[#241D33] border-[#E9DFD8]/80 dark:border-[#40354F] text-[#4A3E4D] dark:text-[#F8F1FF] dark:shadow-[0_8px_24px_rgba(0,0,0,0.28)]",
+    lavender: "bg-[#E7E0FA]/60 dark:bg-[#302641] border-[#E7E0FA] dark:border-[#40354F] text-[#4A3E4D] dark:text-[#F8F1FF] dark:shadow-[0_8px_24px_rgba(0,0,0,0.28)]",
     blush: "bg-[#FFEBF0]/60 dark:bg-[#4A263D]/60 border-[#FFD5DF] dark:border-[#6A3756] text-[#4A3E4D] dark:text-[#F8F1FF]",
     butter: "bg-[#FFF8E5]/70 dark:bg-[#45361D]/50 border-[#F9EDC7] dark:border-[#69522B] text-[#4A3E4D] dark:text-[#F8F1FF]",
     mint: "bg-[#DDEFE2]/60 dark:bg-[#1A3826]/60 border-[#DDEFE2] dark:border-[#2C5E3F] text-[#4A3E4D] dark:text-[#F8F1FF]",
