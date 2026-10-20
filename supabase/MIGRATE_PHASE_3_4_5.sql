@@ -464,3 +464,4 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.companion_profiles;
   END IF;
 END $$;
+

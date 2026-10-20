@@ -16,9 +16,43 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Focie — Focus feels better together",
+  title: "Focie — Focus feels better together 🌸",
   description:
     "A cozy, kawaii, pastel study-with-friends web app. Track focused sessions, stay accountable with personal study days, and cheer on each other every day.",
+  metadataBase: new URL("https://focie.vercel.app"),
+  icons: {
+    icon: [
+      { url: "/icon.png", sizes: "64x64", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  openGraph: {
+    title: "Focie — Focus feels better together 🌸",
+    description:
+      "A cozy, kawaii, pastel study-with-friends web app. Track focused sessions, level up your Fumi companion, and cheer on each other every day.",
+    url: "https://focie.vercel.app",
+    siteName: "Focie",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Focie — Cozy Kawaii Study Companion",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Focie — Focus feels better together 🌸",
+    description:
+      "A cozy, kawaii, pastel study-with-friends web app. Track focused sessions, exchange cozy gifts, and study together with Fumi!",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
