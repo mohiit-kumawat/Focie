@@ -190,13 +190,54 @@ CREATE POLICY "Users can view gifts sent or received"
   ON public.gift_transfers FOR SELECT TO authenticated
   USING (auth.uid() = sender_id OR auth.uid() = recipient_id);
 
+-- Helper functions to avoid infinite recursion in RLS policies
+CREATE OR REPLACE FUNCTION public.is_room_member(check_room_id UUID, check_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.room_members
+    WHERE room_id = check_room_id AND user_id = check_user_id
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_room_owner_or_public(check_room_id UUID, check_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.study_rooms
+    WHERE id = check_room_id AND (is_private = false OR owner_id = check_user_id)
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_room_owner(check_room_id UUID, check_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.study_rooms
+    WHERE id = check_room_id AND owner_id = check_user_id
+  );
+$$;
+
 DROP POLICY IF EXISTS "Public or member rooms are viewable" ON public.study_rooms;
-CREATE POLICY "Public or member rooms are viewable"
+DROP POLICY IF EXISTS "Users can view public rooms or joined rooms" ON public.study_rooms;
+CREATE POLICY "Users can view public rooms or joined rooms"
   ON public.study_rooms FOR SELECT TO authenticated
   USING (
     is_private = false
     OR auth.uid() = owner_id
-    OR EXISTS (SELECT 1 FROM public.room_members rm WHERE rm.room_id = study_rooms.id AND rm.user_id = auth.uid())
+    OR public.is_room_member(id, auth.uid())
   );
 
 DROP POLICY IF EXISTS "Users can create rooms" ON public.study_rooms;
@@ -214,9 +255,9 @@ DROP POLICY IF EXISTS "Members can view room participants" ON public.room_member
 CREATE POLICY "Members can view room participants"
   ON public.room_members FOR SELECT TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM public.study_rooms sr WHERE sr.id = room_members.room_id AND sr.is_private = false)
-    OR auth.uid() = user_id
-    OR EXISTS (SELECT 1 FROM public.room_members rm2 WHERE rm2.room_id = room_members.room_id AND rm2.user_id = auth.uid())
+    auth.uid() = user_id
+    OR public.is_room_owner_or_public(room_id, auth.uid())
+    OR public.is_room_member(room_id, auth.uid())
   );
 
 DROP POLICY IF EXISTS "Users can join rooms" ON public.room_members;
@@ -229,15 +270,15 @@ CREATE POLICY "Members can leave or owners can remove"
   ON public.room_members FOR DELETE TO authenticated
   USING (
     auth.uid() = user_id
-    OR EXISTS (SELECT 1 FROM public.study_rooms sr WHERE sr.id = room_members.room_id AND sr.owner_id = auth.uid())
+    OR public.is_room_owner(room_id, auth.uid())
   );
 
 DROP POLICY IF EXISTS "Members can view room messages" ON public.room_messages;
 CREATE POLICY "Members can view room messages"
   ON public.room_messages FOR SELECT TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM public.room_members rm WHERE rm.room_id = room_messages.room_id AND rm.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.study_rooms sr WHERE sr.id = room_messages.room_id AND sr.owner_id = auth.uid())
+    public.is_room_owner_or_public(room_id, auth.uid())
+    OR public.is_room_member(room_id, auth.uid())
   );
 
 DROP POLICY IF EXISTS "Members can send messages" ON public.room_messages;
@@ -246,8 +287,8 @@ CREATE POLICY "Members can send messages"
   WITH CHECK (
     auth.uid() = sender_id
     AND (
-      EXISTS (SELECT 1 FROM public.room_members rm WHERE rm.room_id = room_messages.room_id AND rm.user_id = auth.uid())
-      OR EXISTS (SELECT 1 FROM public.study_rooms sr WHERE sr.id = room_messages.room_id AND sr.owner_id = auth.uid())
+      public.is_room_owner(room_id, auth.uid())
+      OR public.is_room_member(room_id, auth.uid())
     )
   );
 
