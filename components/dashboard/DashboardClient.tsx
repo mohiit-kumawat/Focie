@@ -11,7 +11,9 @@ import { Card } from "@/components/ui/Card";
 import { FumiMascot } from "@/components/ui/FumiMascot";
 import { StudyTimerWidget } from "@/components/dashboard/StudyTimerWidget";
 import { FriendsPresenceWidget } from "@/components/dashboard/FriendsPresenceWidget";
-import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
+import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
+import { updateStudyDaySettings } from "@/app/actions/leaderboard";
+import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2, Trophy, Edit2, Check } from "lucide-react";
 import type { Profile, StudyDaySettings } from "@/types/database";
 
 interface DashboardClientProps {
@@ -37,6 +39,31 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
   const avatarUrl = profile?.avatar_url || "/images/mascot/fumi-idle.webp?v=2";
   const dayStartTime = settings?.day_start_time?.slice(0, 5) || "06:00";
   const timezone = settings?.timezone || profile?.timezone || "Asia/Kolkata";
+
+  const [activeDayStartTime, setActiveDayStartTime] = useState<string>(dayStartTime);
+  const [isEditingSchedule, setIsEditingSchedule] = useState<boolean>(false);
+  const [scheduleSaving, setScheduleSaving] = useState<boolean>(false);
+  const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
+
+  const handleSaveDayStart = async (time: string) => {
+    setScheduleSaving(true);
+    setScheduleFeedback(null);
+    try {
+      const res = await updateStudyDaySettings(time, timezone);
+      if (res.success) {
+        setActiveDayStartTime(time);
+        setIsEditingSchedule(false);
+        setScheduleFeedback("✓ Saved! Takes effect at next boundary.");
+        setTimeout(() => setScheduleFeedback(null), 3500);
+      } else {
+        setScheduleFeedback(res.error || "Failed to update");
+      }
+    } catch {
+      setScheduleFeedback("Network error");
+    } finally {
+      setScheduleSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FFFDF9] dark:bg-[#171321] text-[#4A3E4D] dark:text-[#F8F1FF] flex flex-col transition-colors duration-300 relative overflow-x-hidden">
@@ -103,7 +130,7 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             <div className="space-y-3 text-center md:text-left">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-[#302641] text-xs font-bold text-[#FF729F] border border-[#FF729F]/30 shadow-xs">
                 <Sparkles className="w-3 h-3" />
-                Phase 2 Live · Cozy Study Sync ✨
+                Phase 3 Live · Personal Study Days & Fair Leaderboards 🏆
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF]">
                 Welcome home, {displayName}! 🌸
@@ -141,26 +168,77 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
           </aside>
         </div>
 
+        {/* Phase 3: Personal Study Days & Fair Competition Leaderboard */}
+        <section className="w-full">
+          <LeaderboardWidget />
+        </section>
+
         {/* User Configuration & Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Study Day Settings Card */}
-          <Card variant="cream" className="flex flex-col justify-between hover:-translate-y-1 hover:border-[#FF729F]/40 transition-all duration-200">
+          {/* Study Day Settings Card (Interactive Quick Schedule Editor) */}
+          <Card variant="cream" className="flex flex-col justify-between hover:border-[#FF729F]/40 transition-all duration-200">
             <div className="space-y-2">
-              <div className="p-2.5 rounded-2xl bg-[#FFEBF0] dark:bg-[#302641] w-fit text-[#FF729F] border border-transparent dark:border-[#40354F]/60">
-                <Clock className="w-5 h-5" />
+              <div className="flex items-center justify-between">
+                <div className="p-2.5 rounded-2xl bg-[#FFEBF0] dark:bg-[#302641] w-fit text-[#FF729F] border border-transparent dark:border-[#40354F]/60">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <button
+                  onClick={() => setIsEditingSchedule(!isEditingSchedule)}
+                  className="px-2.5 py-1 rounded-xl text-xs font-bold text-[#FF729F] hover:bg-[#FFEBF0] dark:hover:bg-[#302641] transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Edit2 className="w-3 h-3" />
+                  <span>{isEditingSchedule ? "Cancel" : "Change"}</span>
+                </button>
               </div>
+
               <h3 className="font-bold text-base text-[#4A3E4D] dark:text-[#F8F1FF]">
                 24-Hour Study Day
               </h3>
               <p className="text-xs text-[#786C7B] dark:text-[#B9AEC9]">
                 Your day resets daily at:
               </p>
-              <p className="text-2xl font-black text-[#FF729F] tracking-tight">
-                {dayStartTime} AM
-              </p>
-              <p className="text-[11px] text-[#A49AAB] dark:text-[#8C7B8E]">
-                Late-night study sessions before this time count toward the previous day!
-              </p>
+
+              {!isEditingSchedule ? (
+                <>
+                  <p className="text-2xl font-black text-[#FF729F] tracking-tight">
+                    {activeDayStartTime} AM
+                  </p>
+                  <p className="text-[11px] text-[#A49AAB] dark:text-[#8C7B8E]">
+                    Late-night study sessions before this time count toward the previous day!
+                  </p>
+                  {scheduleFeedback && (
+                    <p className="text-xs font-bold text-[#91E6C1]">{scheduleFeedback}</p>
+                  )}
+                </>
+              ) : (
+                <div className="pt-1 space-y-2">
+                  <p className="text-[11px] text-[#786C7B] dark:text-[#B9AEC9]">
+                    Select wake-up study boundary:
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {["04:00", "05:00", "06:00", "07:00", "08:00", "09:00"].map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => handleSaveDayStart(t)}
+                        disabled={scheduleSaving}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          activeDayStartTime === t
+                            ? "bg-[#FF729F] text-white shadow-xs"
+                            : "bg-white dark:bg-[#302641] text-[#7D6E7E] dark:text-[#B9AEC9] border border-[#F0E4DE] dark:border-[#40354F] hover:border-[#FF729F]"
+                        }`}
+                      >
+                        {t} AM
+                      </button>
+                    ))}
+                  </div>
+                  {scheduleSaving && (
+                    <div className="flex items-center gap-1.5 text-xs text-[#FF729F]">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Saving schedule...</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -208,12 +286,12 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
         </div>
 
         {/* Phase Milestone Note */}
-        <Card variant="lavender" className="p-6 border border-[#E7E0FA] dark:border-[#40354F] dark:bg-[#241D33] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:border-[#C5A7FF]/40 transition-all duration-200">
+        <Card variant="lavender" className="p-6 border border-[#E7E0FA] dark:border-[#40354F] dark:bg-[#241D33] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:border-[#F6D28B]/40 transition-all duration-200">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 relative shrink-0">
               <Image
-                src="/images/mascot/fumi-studying.webp?v=2"
-                alt="Fumi studying"
+                src="/images/mascot/fumi-celebrating.webp?v=2"
+                alt="Fumi celebrating"
                 fill
                 unoptimized
                 sizes="48px"
@@ -221,11 +299,11 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
               />
             </div>
             <div>
-              <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1">
-                Phase 2 Live: Cozy Study Sync & Real-Time Friends! 🌸
+              <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1 flex items-center gap-2">
+                <span>Phase 3 Live: Personal 24-Hour Study Days & Fair Leaderboards! 🏆</span>
               </h4>
               <p className="text-xs text-[#786C7B] dark:text-[#B9AEC9] leading-relaxed">
-                Your live study desk and real-time buddy room are active! You can now start Pomodoro or Flow sessions, invite study partners, and see each other focusing live over Supabase Realtime WebSockets.
+                Your study day is customized to your personal wake-up boundary ({dayStartTime} AM). Sessions crossing midnight are accurately split, and your group leaderboard tracks live rankings with fair tie resolution and shared sprint challenges!
               </p>
             </div>
           </div>
