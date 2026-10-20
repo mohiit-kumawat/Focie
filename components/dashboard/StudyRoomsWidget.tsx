@@ -17,6 +17,7 @@ import {
   Loader2,
   Sparkles,
   BookOpen,
+  AlertCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -56,10 +57,12 @@ export function StudyRoomsWidget({
   const [newRoomDesc, setNewRoomDesc] = useState<string>("");
   const [newRoomPrivate, setNewRoomPrivate] = useState<boolean>(true);
   const [creating, setCreating] = useState<boolean>(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const [joinCodeInput, setJoinCodeInput] = useState<string>("");
   const [showJoinInput, setShowJoinInput] = useState<boolean>(false);
   const [joining, setJoining] = useState<boolean>(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   // Chat message input
   const [chatInput, setChatInput] = useState<string>("");
@@ -137,6 +140,7 @@ export function StudyRoomsWidget({
     e.preventDefault();
     if (!newRoomName.trim()) return;
     setCreating(true);
+    setCreateError(null);
 
     try {
       const res = await createStudyRoom({
@@ -149,8 +153,14 @@ export function StudyRoomsWidget({
         setShowCreateModal(false);
         setNewRoomName("");
         setNewRoomDesc("");
+        setCreateError(null);
         await loadRooms();
+        setActiveRoom(res.room as RoomWithDetails);
+      } else {
+        setCreateError(res.error || "Failed to create study circle. Please try again.");
       }
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : "Error creating room");
     } finally {
       setCreating(false);
     }
@@ -160,14 +170,20 @@ export function StudyRoomsWidget({
     e.preventDefault();
     if (!joinCodeInput.trim()) return;
     setJoining(true);
+    setJoinError(null);
 
     try {
       const res = await joinStudyRoomByCode({ invite_code: joinCodeInput.trim() });
       if (res.success) {
         setShowJoinInput(false);
         setJoinCodeInput("");
+        setJoinError(null);
         await loadRooms();
+      } else {
+        setJoinError(res.error || "Could not find room with this invite code.");
       }
+    } catch (err: unknown) {
+      setJoinError(err instanceof Error ? err.message : "Error joining room");
     } finally {
       setJoining(false);
     }
@@ -407,7 +423,10 @@ export function StudyRoomsWidget({
             {/* Actions */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowJoinInput(!showJoinInput)}
+                onClick={() => {
+                  setShowJoinInput(!showJoinInput);
+                  setJoinError(null);
+                }}
                 className="px-3.5 py-1.5 rounded-xl border border-[#F0E4DE] dark:border-[#40354F] bg-white dark:bg-[#302641] text-xs font-bold text-[#7D6E7E] dark:text-[#B9AEC9] hover:text-[#FF729F] transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <Hash className="w-3.5 h-3.5" />
@@ -415,7 +434,10 @@ export function StudyRoomsWidget({
               </button>
 
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => {
+                  setShowCreateModal(true);
+                  setCreateError(null);
+                }}
                 className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#FF729F] to-[#F25577] text-white text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -435,29 +457,39 @@ export function StudyRoomsWidget({
           {/* Join with Code Accordion */}
           <AnimatePresence>
             {showJoinInput && (
-              <motion.form
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                onSubmit={handleJoinRoom}
-                className="p-4 rounded-2xl bg-[#FFF5F8] dark:bg-[#1D1729] border border-[#FF729F]/30 flex items-center gap-2"
+                className="space-y-2"
               >
-                <input
-                  type="text"
-                  maxLength={10}
-                  value={joinCodeInput}
-                  onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                  placeholder="Enter 8-character invite code (e.g. K7X9PQ2M)"
-                  className="flex-1 p-2.5 rounded-xl bg-white dark:bg-[#241D33] border border-[#F0E4DE] dark:border-[#40354F] text-xs font-mono uppercase text-[#4A3E4D] dark:text-[#F8F1FF] focus:outline-hidden focus:ring-2 focus:ring-[#FF729F]"
-                />
-                <button
-                  type="submit"
-                  disabled={joining || !joinCodeInput.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-[#FF729F] text-white text-xs font-bold hover:scale-105 transition-all cursor-pointer disabled:opacity-50"
+                <form
+                  onSubmit={handleJoinRoom}
+                  className="p-4 rounded-2xl bg-[#FFF5F8] dark:bg-[#1D1729] border border-[#FF729F]/30 flex items-center gap-2"
                 >
-                  {joining ? "Joining..." : "Join"}
-                </button>
-              </motion.form>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={joinCodeInput}
+                    onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Enter 8-character invite code (e.g. K7X9PQ2M)"
+                    className="flex-1 p-2.5 rounded-xl bg-white dark:bg-[#241D33] border border-[#F0E4DE] dark:border-[#40354F] text-xs font-mono uppercase text-[#4A3E4D] dark:text-[#F8F1FF] focus:outline-hidden focus:ring-2 focus:ring-[#FF729F]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={joining || !joinCodeInput.trim()}
+                    className="px-5 py-2.5 rounded-xl bg-[#FF729F] text-white text-xs font-bold hover:scale-105 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {joining ? "Joining..." : "Join"}
+                  </button>
+                </form>
+                {joinError && (
+                  <p className="px-2 text-xs text-[#FF729F] font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{joinError}</span>
+                  </p>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
 
@@ -544,6 +576,13 @@ export function StudyRoomsWidget({
               </div>
 
               <form onSubmit={handleCreateRoom} className="space-y-3">
+                {createError && (
+                  <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-[#FFEBF0] dark:bg-[#381E2B] border border-[#FFCAD6] dark:border-[#6A3249] text-[#D83A66] dark:text-[#FFAAB9] text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#FF729F]" />
+                    <span>{createError}</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold text-[#4A3E4D] dark:text-[#B9AEC9] mb-1">
                     Room Name (e.g. &ldquo;Late Night LeetCoders 🌙&rdquo;):
@@ -551,7 +590,7 @@ export function StudyRoomsWidget({
                   <input
                     type="text"
                     required
-                    maxLength={60}
+                    maxLength={50}
                     value={newRoomName}
                     onChange={(e) => setNewRoomName(e.target.value)}
                     placeholder="Enter study circle name..."

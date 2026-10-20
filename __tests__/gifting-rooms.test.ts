@@ -70,11 +70,11 @@ describe("Phase 4: Gifting & Study Rooms Validation Suite (FR-07 & FR-08)", () =
       }
     });
 
-    it("rejects room names longer than 60 characters", () => {
-      const res = createRoomSchema.safeParse({ name: "x".repeat(61) });
+    it("rejects room names longer than 50 characters", () => {
+      const res = createRoomSchema.safeParse({ name: "x".repeat(51) });
       expect(res.success).toBe(false);
       if (!res.success) {
-        expect(res.error.issues[0]?.message).toMatch(/cannot exceed 60 characters/i);
+        expect(res.error.issues[0]?.message).toMatch(/cannot exceed 50 characters/i);
       }
     });
 

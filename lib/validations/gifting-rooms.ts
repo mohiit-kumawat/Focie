@@ -14,7 +14,7 @@ export const createRoomSchema = z.object({
     .string()
     .trim()
     .min(3, "Room name must be at least 3 characters")
-    .max(60, "Room name cannot exceed 60 characters"),
+    .max(50, "Room name cannot exceed 50 characters"),
   description: z.string().trim().max(200, "Description cannot exceed 200 characters").optional().nullable(),
   is_private: z.boolean().default(false),
 });
