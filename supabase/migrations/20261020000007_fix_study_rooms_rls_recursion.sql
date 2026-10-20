@@ -93,3 +93,4 @@ CREATE POLICY "Members can send messages"
       OR public.is_room_member(room_id, auth.uid())
     )
   );
+
