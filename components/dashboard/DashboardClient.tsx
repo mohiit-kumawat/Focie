@@ -14,8 +14,11 @@ import { FriendsPresenceWidget } from "@/components/dashboard/FriendsPresenceWid
 import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
 import { GiftingShopWidget } from "@/components/dashboard/GiftingShopWidget";
 import { StudyRoomsWidget } from "@/components/dashboard/StudyRoomsWidget";
+import { FumiCompanionWidget } from "@/components/dashboard/FumiCompanionWidget";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
+import { SettingsModal } from "@/components/dashboard/SettingsModal";
 import { updateStudyDaySettings } from "@/app/actions/leaderboard";
-import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2, Trophy, Edit2, Check } from "lucide-react";
+import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2, Trophy, Edit2, Check, Gift, Settings } from "lucide-react";
 import type { Profile, StudyDaySettings } from "@/types/database";
 
 interface FriendItem {
@@ -54,6 +57,7 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
   const [isEditingSchedule, setIsEditingSchedule] = useState<boolean>(false);
   const [scheduleSaving, setScheduleSaving] = useState<boolean>(false);
   const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
   const handleSaveDayStart = async (time: string) => {
     setScheduleSaving(true);
@@ -88,6 +92,19 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
 
           <div className="flex items-center gap-3 sm:gap-4">
             <ThemeToggle />
+
+            {/* In-app Notification Center (FR-10) */}
+            <NotificationCenter />
+
+            {/* User Preferences & Privacy Settings (FR-10) */}
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2.5 rounded-2xl bg-white dark:bg-[#241D33] border border-[#F0E4DE] dark:border-[#40354F] text-[#786C7B] dark:text-[#F8F1FF] hover:border-[#FF729F] hover:text-[#FF729F] transition-all cursor-pointer shadow-xs"
+              title="Preferences & Privacy Settings"
+              aria-label="Open settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
 
             <div className="h-5 w-px bg-[#E9DFD8] dark:bg-[#40354F]" />
 
@@ -140,7 +157,7 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
             <div className="space-y-3 text-center md:text-left">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-[#302641] text-xs font-bold text-[#FF729F] border border-[#FF729F]/30 shadow-xs">
                 <Sparkles className="w-3 h-3" />
-                Phase 4 Live · Virtual Gift Shop & Private Study Rooms 🎁
+                Phase 5 Complete · Companion Progression, Wardrobe & Notification Center 🌟
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF]">
                 Welcome home, {displayName}! 🌸
@@ -181,6 +198,11 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
         {/* Phase 3: Personal Study Days & Fair Competition Leaderboard */}
         <section className="w-full">
           <LeaderboardWidget />
+        </section>
+
+        {/* Phase 5: Fumi Companion & Progression Wardrobe (FR-09) */}
+        <section className="w-full">
+          <FumiCompanionWidget />
         </section>
 
         {/* Phase 4: Cozy Gift Shop & Private Study Circles */}
@@ -323,14 +345,20 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
             </div>
             <div>
               <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1 flex items-center gap-2">
-                <span>Phase 4 Live: Virtual Gift Shop & Private Study Circles! 🎁</span>
+                <span>Phase 5 Complete: Full Study Sanctuary & Companion Progression! 🌟</span>
               </h4>
               <p className="text-xs text-[#786C7B] dark:text-[#B9AEC9] leading-relaxed">
-                Earn coins through verified focus intervals, exchange gifts with friends, create private invite-only study circles, and stay connected with live real-time room chat!
+                Evolve Fumi through verified focus milestones, unlock cozy cosmetic headwear & items, customize quiet hours and activity privacy, and enjoy synchronized multi-friend study sessions!
               </p>
             </div>
           </div>
         </Card>
+
+        {/* User Preferences & Privacy Settings Modal (FR-10) */}
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
       </main>
     </div>
   );

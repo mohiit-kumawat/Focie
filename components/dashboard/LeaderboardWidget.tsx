@@ -19,21 +19,29 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
-import type { LeaderboardMode } from "@/app/actions/leaderboard";
+import type { LeaderboardMode, LeaderboardResult } from "@/app/actions/leaderboard";
 import { formatFocusedTime } from "@/lib/time/study-day";
 
 interface LeaderboardWidgetProps {
   onInviteFriends?: () => void;
+  initialData?: LeaderboardResult | null;
+  previewMode?: boolean;
 }
 
-export function LeaderboardWidget({ onInviteFriends }: LeaderboardWidgetProps) {
+export function LeaderboardWidget({
+  onInviteFriends,
+  initialData,
+  previewMode = false,
+}: LeaderboardWidgetProps) {
   const { mode, setMode, data, loading, error, rankUpMessage, refresh } =
-    useLeaderboard("personal_day");
+    useLeaderboard("personal_day", !previewMode);
   const [showInfo, setShowInfo] = useState(false);
 
-  const rankings = data?.rankings || [];
+  const activeData = previewMode ? initialData : (data || initialData);
+  const rankings = activeData?.rankings || [];
   const maxSeconds = rankings[0]?.focusedSeconds || 1;
-  const userWindow = data?.userWindow;
+  const userWindow = activeData?.userWindow;
+  const isLoading = !previewMode && loading && !initialData;
 
   // Podium participants (top 3)
   const top1 = rankings.find((r) => r.rank === 1);
@@ -216,7 +224,7 @@ export function LeaderboardWidget({ onInviteFriends }: LeaderboardWidgetProps) {
 
       {/* Main Body */}
       <div className="mt-6">
-        {loading && rankings.length === 0 ? (
+        {isLoading && rankings.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center space-y-3 text-[#A49AAB]">
             <Loader2 className="w-7 h-7 animate-spin text-[#FF729F]" />
             <p className="text-xs">Calculating fair study boundaries...</p>

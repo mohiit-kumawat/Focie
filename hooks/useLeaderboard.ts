@@ -8,15 +8,19 @@ import {
   type LeaderboardResult,
 } from "@/app/actions/leaderboard";
 
-export function useLeaderboard(initialMode: LeaderboardMode = "personal_day") {
+export function useLeaderboard(
+  initialMode: LeaderboardMode = "personal_day",
+  enabled: boolean = true
+) {
   const [mode, setMode] = useState<LeaderboardMode>(initialMode);
   const [data, setData] = useState<LeaderboardResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(enabled);
   const [error, setError] = useState<string | null>(null);
   const prevRankRef = useRef<number | null>(null);
   const [rankUpMessage, setRankUpMessage] = useState<string | null>(null);
 
   const fetchLeaderboard = useCallback(async (selectedMode: LeaderboardMode) => {
+    if (!enabled) return;
     setLoading(true);
     setError(null);
     try {
@@ -43,11 +47,12 @@ export function useLeaderboard(initialMode: LeaderboardMode = "personal_day") {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchLeaderboard(mode);
-  }, [mode, fetchLeaderboard]);
+  }, [mode, fetchLeaderboard, enabled]);
 
   // Subscribe to real-time session changes via Supabase Realtime
   useEffect(() => {

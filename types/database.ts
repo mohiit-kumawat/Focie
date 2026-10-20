@@ -129,6 +129,67 @@ export type RoomMessage = {
   created_at: string;
 };
 
+export type CompanionStage = "sprout" | "seedling" | "bloom" | "evergreen" | "celestial";
+export type CompanionCosmetic =
+  | "default"
+  | "headphones"
+  | "quill"
+  | "tea_cup"
+  | "sakura_crown"
+  | "royal_crown"
+  | "wizard_hat";
+
+export type CompanionProfile = {
+  id: string;
+  user_id: string;
+  level: number;
+  xp: number;
+  current_stage: CompanionStage;
+  equipped_cosmetic: CompanionCosmetic;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserCosmetic = {
+  id: string;
+  user_id: string;
+  cosmetic_id: CompanionCosmetic;
+  unlocked_via: "milestone" | "gift" | "default";
+  unlocked_at: string;
+};
+
+export type NotificationType =
+  | "gift_received"
+  | "friend_request"
+  | "friend_accepted"
+  | "milestone_unlocked"
+  | "room_invite"
+  | "level_up";
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: Json;
+  is_read: boolean;
+  created_at: string;
+};
+
+export type UserSettings = {
+  id: string;
+  user_id: string;
+  sound_effects: boolean;
+  activity_visibility: "public" | "friends" | "private";
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
+  reduced_motion: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -208,6 +269,30 @@ export type Database = {
         Row: RoomMessage;
         Insert: Partial<RoomMessage> & { room_id: string; sender_id: string; content: string };
         Update: Partial<RoomMessage>;
+        Relationships: [];
+      };
+      companion_profiles: {
+        Row: CompanionProfile;
+        Insert: Partial<CompanionProfile> & { user_id: string };
+        Update: Partial<CompanionProfile>;
+        Relationships: [];
+      };
+      user_cosmetics: {
+        Row: UserCosmetic;
+        Insert: Partial<UserCosmetic> & { user_id: string; cosmetic_id: CompanionCosmetic };
+        Update: Partial<UserCosmetic>;
+        Relationships: [];
+      };
+      notifications: {
+        Row: Notification;
+        Insert: Partial<Notification> & { user_id: string; type: NotificationType; title: string; message: string };
+        Update: Partial<Notification>;
+        Relationships: [];
+      };
+      user_settings: {
+        Row: UserSettings;
+        Insert: Partial<UserSettings> & { user_id: string };
+        Update: Partial<UserSettings>;
         Relationships: [];
       };
     };
