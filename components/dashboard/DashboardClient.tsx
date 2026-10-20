@@ -12,17 +12,27 @@ import { FumiMascot } from "@/components/ui/FumiMascot";
 import { StudyTimerWidget } from "@/components/dashboard/StudyTimerWidget";
 import { FriendsPresenceWidget } from "@/components/dashboard/FriendsPresenceWidget";
 import { LeaderboardWidget } from "@/components/dashboard/LeaderboardWidget";
+import { GiftingShopWidget } from "@/components/dashboard/GiftingShopWidget";
+import { StudyRoomsWidget } from "@/components/dashboard/StudyRoomsWidget";
 import { updateStudyDaySettings } from "@/app/actions/leaderboard";
 import { LogOut, Clock, Globe, ShieldCheck, Sparkles, Loader2, Trophy, Edit2, Check } from "lucide-react";
 import type { Profile, StudyDaySettings } from "@/types/database";
+
+interface FriendItem {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl: string | null;
+}
 
 interface DashboardClientProps {
   email: string;
   profile: Profile | null;
   settings: StudyDaySettings | null;
+  friends?: FriendItem[];
 }
 
-export function DashboardClient({ email, profile, settings }: DashboardClientProps) {
+export function DashboardClient({ email, profile, settings, friends = [] }: DashboardClientProps) {
   const router = useRouter();
   const supabase = createClient();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -130,7 +140,7 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             <div className="space-y-3 text-center md:text-left">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-[#302641] text-xs font-bold text-[#FF729F] border border-[#FF729F]/30 shadow-xs">
                 <Sparkles className="w-3 h-3" />
-                Phase 3 Live · Personal Study Days & Fair Leaderboards 🏆
+                Phase 4 Live · Virtual Gift Shop & Private Study Rooms 🎁
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF]">
                 Welcome home, {displayName}! 🌸
@@ -172,6 +182,19 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
         <section className="w-full">
           <LeaderboardWidget />
         </section>
+
+        {/* Phase 4: Cozy Gift Shop & Private Study Circles */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Virtual Coins & Gift Catalog (6 cols) */}
+          <section className="lg:col-span-6 w-full">
+            <GiftingShopWidget friends={friends} />
+          </section>
+
+          {/* Private Study Rooms & Live Chat (6 cols) */}
+          <aside className="lg:col-span-6 w-full">
+            <StudyRoomsWidget />
+          </aside>
+        </div>
 
         {/* User Configuration & Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -286,7 +309,7 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
         </div>
 
         {/* Phase Milestone Note */}
-        <Card variant="lavender" className="p-6 border border-[#E7E0FA] dark:border-[#40354F] dark:bg-[#241D33] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:border-[#F6D28B]/40 transition-all duration-200">
+        <Card variant="lavender" className="p-6 border border-[#E7E0FA] dark:border-[#40354F] dark:bg-[#241D33] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:border-[#FF729F]/40 transition-all duration-200">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 relative shrink-0">
               <Image
@@ -300,10 +323,10 @@ export function DashboardClient({ email, profile, settings }: DashboardClientPro
             </div>
             <div>
               <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1 flex items-center gap-2">
-                <span>Phase 3 Live: Personal 24-Hour Study Days & Fair Leaderboards! 🏆</span>
+                <span>Phase 4 Live: Virtual Gift Shop & Private Study Circles! 🎁</span>
               </h4>
               <p className="text-xs text-[#786C7B] dark:text-[#B9AEC9] leading-relaxed">
-                Your study day is customized to your personal wake-up boundary ({dayStartTime} AM). Sessions crossing midnight are accurately split, and your group leaderboard tracks live rankings with fair tie resolution and shared sprint challenges!
+                Earn coins through verified focus intervals, exchange gifts with friends, create private invite-only study circles, and stay connected with live real-time room chat!
               </p>
             </div>
           </div>

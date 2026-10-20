@@ -65,6 +65,70 @@ export type Friendship = {
   updated_at: string;
 };
 
+export type UserWallet = {
+  id: string;
+  user_id: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WalletTransaction = {
+  id: string;
+  user_id: string;
+  amount: number;
+  type: "earned_focus" | "gift_sent" | "gift_received" | "bonus" | "welcome";
+  reference_id: string | null;
+  idempotency_key: string | null;
+  created_at: string;
+};
+
+export type GiftItem = {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  coin_price: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type GiftTransfer = {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  gift_id: string;
+  note: string | null;
+  created_at: string;
+};
+
+export type StudyRoom = {
+  id: string;
+  owner_id: string;
+  name: string;
+  description: string | null;
+  is_private: boolean;
+  invite_code: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RoomMember = {
+  id: string;
+  room_id: string;
+  user_id: string;
+  role: "owner" | "member";
+  joined_at: string;
+};
+
+export type RoomMessage = {
+  id: string;
+  room_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -102,6 +166,48 @@ export type Database = {
         Row: Friendship;
         Insert: Partial<Friendship> & { requester_id: string; recipient_id: string };
         Update: Partial<Friendship>;
+        Relationships: [];
+      };
+      user_wallets: {
+        Row: UserWallet;
+        Insert: Partial<UserWallet> & { user_id: string };
+        Update: Partial<UserWallet>;
+        Relationships: [];
+      };
+      wallet_transactions: {
+        Row: WalletTransaction;
+        Insert: Partial<WalletTransaction> & { user_id: string; amount: number; type: WalletTransaction["type"] };
+        Update: Partial<WalletTransaction>;
+        Relationships: [];
+      };
+      gift_catalog: {
+        Row: GiftItem;
+        Insert: GiftItem;
+        Update: Partial<GiftItem>;
+        Relationships: [];
+      };
+      gift_transfers: {
+        Row: GiftTransfer;
+        Insert: Partial<GiftTransfer> & { sender_id: string; recipient_id: string; gift_id: string };
+        Update: Partial<GiftTransfer>;
+        Relationships: [];
+      };
+      study_rooms: {
+        Row: StudyRoom;
+        Insert: Partial<StudyRoom> & { owner_id: string; name: string };
+        Update: Partial<StudyRoom>;
+        Relationships: [];
+      };
+      room_members: {
+        Row: RoomMember;
+        Insert: Partial<RoomMember> & { room_id: string; user_id: string };
+        Update: Partial<RoomMember>;
+        Relationships: [];
+      };
+      room_messages: {
+        Row: RoomMessage;
+        Insert: Partial<RoomMessage> & { room_id: string; sender_id: string; content: string };
+        Update: Partial<RoomMessage>;
         Relationships: [];
       };
     };
