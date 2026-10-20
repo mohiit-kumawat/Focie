@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FocusieLogo } from "@/components/ui/FocusieLogo";
@@ -81,14 +82,71 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
 
   return (
     <div className="min-h-screen bg-[#FFFDF9] dark:bg-[#171321] text-[#4A3E4D] dark:text-[#F8F1FF] flex flex-col transition-colors duration-300 relative overflow-x-hidden">
-      {/* Subtle Ambient Radial Lighting for Midnight Kawaii Depth (Dark Mode Only) */}
-      <div className="pointer-events-none absolute -top-24 right-1/4 w-[600px] h-[450px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,114,159,0.06)_0%,rgba(197,167,255,0.035)_45%,transparent_75%)] blur-[96px] dark:block hidden" />
-      <div className="pointer-events-none absolute top-[360px] -left-24 w-[650px] h-[550px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(197,167,255,0.05)_0%,rgba(255,114,159,0.025)_40%,transparent_75%)] blur-[110px] dark:block hidden" />
+      {/* 🌸 Kawaii Soothing Atmospheric Sanctuary Background Layer (Fixed & Non-blocking) */}
+      <div className="fixed inset-0 pointer-events-none select-none overflow-hidden z-0">
+        {/* Daylight Anime Sky & Garden Sanctuary (Light Mode) */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out opacity-65 dark:opacity-0"
+          style={{
+            backgroundImage: "url('/images/dashboard-day-sanctuary-bg.webp')",
+          }}
+        />
+
+        {/* Midnight Lo-Fi Twilight Sanctuary (Dark Mode) */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out opacity-0 dark:opacity-75"
+          style={{
+            backgroundImage: "url('/images/dashboard-night-sanctuary-bg.webp')",
+          }}
+        />
+
+        {/* Atmospheric Soothing Vignette & Gradient Veil (Ensures High Contrast & Legibility for All Widgets) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FFFDF9]/70 via-[#FFFDF9]/45 to-[#FFFDF9]/80 dark:from-[#171321]/75 dark:via-[#171321]/50 dark:to-[#171321]/85 backdrop-blur-[0.5px]" />
+
+        {/* Delicate Modern Dot Matrix Grid (Matches Auth Style) */}
+        <div
+          className="absolute inset-0 opacity-15 dark:opacity-20"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(197, 167, 255, 0.22) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        {/* Ambient Radial Depth Glows */}
+        <div className="absolute -top-24 right-1/4 w-[600px] h-[450px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,114,159,0.08)_0%,rgba(197,167,255,0.04)_45%,transparent_75%)] blur-[96px] dark:block hidden" />
+        <div className="absolute top-[360px] -left-24 w-[650px] h-[550px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(197,167,255,0.06)_0%,rgba(255,114,159,0.03)_40%,transparent_75%)] blur-[110px] dark:block hidden" />
+
+        {/* Gentle Floating Sakura Petals & Star Particles (Decorative Subtle Animations) */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Petal 1 */}
+          <span className="absolute top-[12%] left-[8%] w-3 h-3 rounded-tr-full rounded-bl-full bg-[#FF8CA3]/40 dark:bg-[#C5A7FF]/30 animate-float-slow transform rotate-12 blur-[0.4px]" />
+          {/* Petal 2 */}
+          <span className="absolute top-[35%] right-[10%] w-3.5 h-3.5 rounded-tl-full rounded-br-full bg-[#FF8CA3]/35 dark:bg-[#FF729F]/25 animate-float-slow-delay transform -rotate-45 blur-[0.4px]" />
+          {/* Twinkle Star 1 */}
+          <span className="absolute top-[22%] right-[24%] text-[#F6D28B]/60 dark:text-[#F6D28B]/70 text-xs animate-pulse select-none">✦</span>
+          {/* Twinkle Star 2 */}
+          <span className="absolute top-[58%] left-[14%] text-[#C5A7FF]/50 dark:text-[#C5A7FF]/65 text-xs animate-pulse select-none">✧</span>
+          {/* Petal 3 */}
+          <span className="absolute top-[75%] right-[16%] w-2.5 h-2.5 rounded-tr-full rounded-bl-full bg-[#FF8CA3]/30 dark:bg-[#C5A7FF]/25 animate-float-slow transform rotate-45 blur-[0.5px]" />
+        </div>
+      </div>
 
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 border-b border-[#E9DFD8]/80 dark:border-[#40354F]/80 bg-white/70 dark:bg-[#241D33]/85 backdrop-blur-md px-6 lg:px-10 py-3.5 flex items-center justify-between">
         <div className="max-w-[1360px] mx-auto w-full flex items-center justify-between">
-          <FocusieLogo size={32} />
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF729F] rounded-xl px-1.5 py-1 transition-transform active:scale-95 text-left"
+            aria-label="Focie Dashboard"
+          >
+            <div className="relative w-8 h-8 flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
+              <FocusieLogo size={32} />
+            </div>
+            <span className="font-display text-2xl font-black tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF] group-hover:text-[#FF729F] transition-colors">
+              Focie
+            </span>
+          </Link>
 
           <div className="flex items-center gap-3 sm:gap-4">
             <ThemeToggle />
