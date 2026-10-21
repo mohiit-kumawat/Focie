@@ -213,10 +213,7 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
             <div className="space-y-3 text-center md:text-left">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-[#302641] text-xs font-bold text-[#FF729F] border border-[#FF729F]/30 shadow-xs">
-                <Sparkles className="w-3 h-3" />
-                Phase 5 Complete · Companion Progression, Wardrobe & Notification Center 🌟
-              </span>
+              
               <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black tracking-tight text-[#4A3E4D] dark:text-[#F8F1FF]">
                 Welcome home, {displayName}! 🌸
               </h1>
@@ -403,7 +400,7 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
             </div>
             <div>
               <h4 className="font-bold text-sm text-[#4A3E4D] dark:text-[#F8F1FF] mb-1 flex items-center gap-2">
-                <span>Phase 5 Complete: Full Study Sanctuary & Companion Progression! 🌟</span>
+                <span>Hii, I'm Fumi and I'll grow as you work harder i.e. I'm YOU! 🌟</span>
               </h4>
               <p className="text-xs text-[#786C7B] dark:text-[#B9AEC9] leading-relaxed">
                 Evolve Fumi through verified focus milestones, unlock cozy cosmetic headwear & items, customize quiet hours and activity privacy, and enjoy synchronized multi-friend study sessions!
