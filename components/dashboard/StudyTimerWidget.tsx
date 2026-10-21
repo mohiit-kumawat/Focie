@@ -1,9 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
-import { Play, Pause, Square, Sparkles, BookOpen, Volume2, VolumeX } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Square,
+  Sparkles,
+  BookOpen,
+  Volume2,
+  VolumeX,
+  Plus,
+  X,
+  Pencil,
+  RotateCcw,
+  Check,
+} from "lucide-react";
 import { useStudyTimer } from "@/hooks/useStudyTimer";
 import { soundEngine } from "@/lib/audio/chime";
 import type { SessionMode, StudySession } from "@/types/database";
@@ -12,7 +25,7 @@ interface StudyTimerWidgetProps {
   onSessionComplete?: (session: StudySession) => void;
 }
 
-const PRESET_SUBJECTS = [
+const DEFAULT_PRESET_SUBJECTS = [
   "Deep Work ⚡",
   "Mathematics 📐",
   "Coding 💻",
@@ -21,14 +34,115 @@ const PRESET_SUBJECTS = [
   "Science 🧬",
 ];
 
+const QUICK_SUGGESTIONS = [
+  "Biology 🧬",
+  "Chemistry 🧪",
+  "History 📜",
+  "Literature 📚",
+  "Design 🎨",
+  "Exam Prep ✍️",
+];
+
+const STORAGE_KEY = "focie_custom_subjects_v1";
+
 export function StudyTimerWidget({ onSessionComplete }: StudyTimerWidgetProps) {
   const [selectedMode, setSelectedMode] = useState<SessionMode>("pomodoro");
   const [targetMinutes, setTargetMinutes] = useState<number>(25);
   const [subjectTag, setSubjectTag] = useState<string>("Deep Work ⚡");
+  const [subjects, setSubjects] = useState<string[]>(DEFAULT_PRESET_SUBJECTS);
+  const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
+  const [showAddInput, setShowAddInput] = useState<boolean>(false);
+  const [newSubjectName, setNewSubjectName] = useState<string>("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
   const [completedSession, setCompletedSession] = useState<StudySession | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number; emoji: string }[]>([]);
   const [fumiBounce, setFumiBounce] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.getMuted());
+
+  // Load custom subjects from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSubjects(parsed);
+          setSubjectTag(parsed[0]);
+        }
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+  }, []);
+
+  const persistSubjects = (newList: string[]) => {
+    setSubjects(newList);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+    } catch {
+      // Ignore storage write errors
+    }
+  };
+
+  const handleAddSubject = (nameToAdd?: string) => {
+    const raw = (nameToAdd || newSubjectName).trim();
+    if (!raw) return;
+    const clean = raw.slice(0, 40);
+
+    if (!subjects.includes(clean)) {
+      const updated = [...subjects, clean];
+      persistSubjects(updated);
+      setSubjectTag(clean);
+    } else {
+      setSubjectTag(clean);
+    }
+
+    setNewSubjectName("");
+    setShowAddInput(false);
+  };
+
+  const handleRemoveSubject = (idx: number) => {
+    if (subjects.length <= 1) return;
+    const removedItem = subjects[idx];
+    const updated = subjects.filter((_, i) => i !== idx);
+    persistSubjects(updated);
+
+    if (subjectTag === removedItem) {
+      setSubjectTag(updated[0] || "Deep Work ⚡");
+    }
+    if (editingIndex === idx) {
+      setEditingIndex(null);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex === null) return;
+    const clean = editingValue.trim().slice(0, 40);
+    if (!clean) {
+      setEditingIndex(null);
+      return;
+    }
+
+    const oldName = subjects[editingIndex];
+    const updated = [...subjects];
+    updated[editingIndex] = clean;
+    persistSubjects(updated);
+
+    if (subjectTag === oldName) {
+      setSubjectTag(clean);
+    }
+
+    setEditingIndex(null);
+    setEditingValue("");
+  };
+
+  const handleResetDefaults = () => {
+    persistSubjects(DEFAULT_PRESET_SUBJECTS);
+    setSubjectTag(DEFAULT_PRESET_SUBJECTS[0] ?? "Deep Work ⚡");
+    setEditingIndex(null);
+    setShowAddInput(false);
+  };
 
   const handleToggleSound = () => {
     const next = soundEngine.toggleMuted();
@@ -353,32 +467,236 @@ export function StudyTimerWidget({ onSessionComplete }: StudyTimerWidgetProps) {
       {/* Bottom Control Dock: Activity Selector & Action Buttons */}
       <div className="pt-5 border-t border-[#F0E4DE] dark:border-[#352B46] space-y-4">
         {/* Activity Chips Picker */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 shrink-0">
-            <BookOpen className="w-4 h-4 text-[#FF729F]" />
-            <span className="text-xs font-extrabold text-[#4A3E4D] dark:text-[#F8F1FF]">
-              {timer.state === "idle" ? "Focus Subject:" : "Current Subject:"}
-            </span>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <BookOpen className="w-4 h-4 text-[#FF729F]" />
+              <span className="text-xs font-extrabold text-[#4A3E4D] dark:text-[#F8F1FF]">
+                {timer.state === "idle" ? "Focus Subject:" : "Current Subject:"}
+              </span>
+              {isCustomizing && (
+                <span className="text-[10px] font-bold text-[#FF729F] bg-[#FFEBF0] dark:bg-[#FF729F]/20 px-2 py-0.5 rounded-full border border-[#FF729F]/30 animate-pulse">
+                  Edit Mode
+                </span>
+              )}
+            </div>
+
+            {timer.state === "idle" && (
+              <div className="flex items-center gap-1.5">
+                {isCustomizing ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleResetDefaults}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-[#8C7B8E] hover:text-[#FF729F] hover:bg-[#FFEBF0] dark:hover:bg-[#FF729F]/20 transition-all flex items-center gap-1 cursor-pointer"
+                      title="Reset to default subjects"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomizing(false);
+                        setShowAddInput(false);
+                        setEditingIndex(null);
+                      }}
+                      className="px-3 py-1 rounded-lg bg-[#FF729F] text-white text-xs font-bold hover:bg-[#F25577] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Done</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddInput(true)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold text-[#FF729F] hover:bg-[#FFEBF0] dark:hover:bg-[#FF729F]/20 transition-all flex items-center gap-1 cursor-pointer"
+                      title="Add a custom subject"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomizing(true)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold text-[#8C7B8E] dark:text-[#B9AEC9] hover:text-[#FF729F] hover:bg-[#FFEBF0] dark:hover:bg-[#FF729F]/20 transition-all flex items-center gap-1 cursor-pointer"
+                      title="Customize or remove subjects"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      <span>Manage</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {timer.state === "idle" ? (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {PRESET_SUBJECTS.map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => setSubjectTag(sub)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
-                    subjectTag === sub
-                      ? "bg-[#FFEBF0] dark:bg-[#FF729F]/20 text-[#FF729F] border border-[#FF729F]/50 shadow-xs scale-105"
-                      : "bg-[#FFF5F8] dark:bg-[#302641] text-[#7D6E7E] dark:text-[#B9AEC9] border border-[#E9DFD8] dark:border-[#40354F] hover:border-[#FF729F]/50 hover:text-[#FF729F] hover:scale-105 active:scale-95"
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {subjects.map((sub, idx) => {
+                  if (isCustomizing && editingIndex === idx) {
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-1 p-1 rounded-xl bg-white dark:bg-[#1D1729] border-2 border-[#FF729F] shadow-xs"
+                      >
+                        <input
+                          type="text"
+                          maxLength={40}
+                          value={editingValue}
+                          autoFocus
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveEdit();
+                            if (e.key === "Escape") setEditingIndex(null);
+                          }}
+                          className="px-2 py-0.5 text-xs font-bold text-[#4A3E4D] dark:text-[#F8F1FF] bg-transparent focus:outline-hidden w-28 sm:w-36"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveEdit}
+                          className="p-1 rounded-lg bg-[#FF729F] text-white hover:scale-105 cursor-pointer"
+                          title="Save"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingIndex(null)}
+                          className="p-1 rounded-lg text-[#8C7B8E] hover:text-[#FF729F] cursor-pointer"
+                          title="Cancel"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={sub}
+                      className={`group relative flex items-center rounded-xl text-xs font-bold transition-all duration-150 ${
+                        subjectTag === sub && !isCustomizing
+                          ? "bg-[#FFEBF0] dark:bg-[#FF729F]/20 text-[#FF729F] border border-[#FF729F]/50 shadow-xs scale-105"
+                          : "bg-[#FFF5F8] dark:bg-[#302641] text-[#7D6E7E] dark:text-[#B9AEC9] border border-[#E9DFD8] dark:border-[#40354F] hover:border-[#FF729F]/50 hover:text-[#FF729F]"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isCustomizing) {
+                            setEditingIndex(idx);
+                            setEditingValue(sub);
+                          } else {
+                            setSubjectTag(sub);
+                          }
+                        }}
+                        className="px-3.5 py-1.5 cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>{sub}</span>
+                        {isCustomizing && (
+                          <Pencil className="w-2.5 h-2.5 opacity-50 group-hover:opacity-100 text-[#FF729F]" />
+                        )}
+                      </button>
+
+                      {isCustomizing && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveSubject(idx);
+                          }}
+                          disabled={subjects.length <= 1}
+                          className="pr-2.5 pl-0.5 py-1.5 text-[#8C7B8E] hover:text-[#FF729F] disabled:opacity-30 disabled:hover:text-[#8C7B8E] cursor-pointer transition-colors"
+                          title={subjects.length <= 1 ? "At least 1 subject is required" : `Remove ${sub}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Inline Add button when in normal mode */}
+                {!isCustomizing && !showAddInput && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddInput(true)}
+                    className="px-3 py-1.5 rounded-xl border border-dashed border-[#FF729F]/50 text-[#FF729F] text-xs font-bold hover:bg-[#FFEBF0] dark:hover:bg-[#FF729F]/15 transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>New</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Add Subject Input Drawer */}
+              <AnimatePresence>
+                {showAddInput && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-3 rounded-2xl bg-[#FFF5F8] dark:bg-[#1D1729] border border-[#FF729F]/30 space-y-2 overflow-hidden"
+                  >
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleAddSubject();
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="text"
+                        maxLength={40}
+                        autoFocus
+                        value={newSubjectName}
+                        onChange={(e) => setNewSubjectName(e.target.value)}
+                        placeholder="e.g. Biology 🧬, Anatomy 🫀, History 📜..."
+                        className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-[#241D33] border border-[#F0E4DE] dark:border-[#40354F] text-xs font-bold text-[#4A3E4D] dark:text-[#F8F1FF] focus:outline-hidden focus:ring-2 focus:ring-[#FF729F]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newSubjectName.trim()}
+                        className="px-4 py-2 rounded-xl bg-[#FF729F] text-white text-xs font-bold hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddInput(false);
+                          setNewSubjectName("");
+                        }}
+                        className="p-2 text-[#8C7B8E] hover:text-[#FF729F] cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </form>
+
+                    {/* Quick suggestion pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[10px] font-bold text-[#8C7B8E] dark:text-[#B9AEC9]">Suggestions:</span>
+                      {QUICK_SUGGESTIONS.filter((s) => !subjects.includes(s)).map((suggested) => (
+                        <button
+                          key={suggested}
+                          type="button"
+                          onClick={() => handleAddSubject(suggested)}
+                          className="px-2 py-0.5 rounded-lg bg-white dark:bg-[#241D33] hover:bg-[#FFEBF0] dark:hover:bg-[#FF729F]/20 text-[11px] font-semibold text-[#7D6E7E] dark:text-[#B9AEC9] border border-[#F0E4DE] dark:border-[#40354F] hover:border-[#FF729F]/40 hover:text-[#FF729F] transition-all cursor-pointer"
+                        >
+                          +{suggested}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
-            <span className="text-xs font-bold text-[#FF729F] bg-[#FFEBF0] dark:bg-[#FF729F]/20 px-3.5 py-1.5 rounded-xl border border-[#FF729F]/40 shadow-xs">
+            <span className="text-xs font-bold text-[#FF729F] bg-[#FFEBF0] dark:bg-[#FF729F]/20 px-3.5 py-1.5 rounded-xl border border-[#FF729F]/40 shadow-xs inline-block w-fit">
               {timer.session?.subject_tag}
             </span>
           )}
