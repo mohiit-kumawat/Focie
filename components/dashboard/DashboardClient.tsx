@@ -241,7 +241,17 @@ export function DashboardClient({ email, profile, settings, friends = [] }: Dash
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main Focus Desk (7 cols) */}
           <section className="lg:col-span-7 w-full">
-            <StudyTimerWidget />
+            <StudyTimerWidget
+              userId={profile?.id}
+              initialSubjects={
+                Array.isArray(
+                  (profile?.preferences as Record<string, unknown> | undefined)?.custom_subjects
+                ) &&
+                ((profile?.preferences as Record<string, unknown>).custom_subjects as string[]).length > 0
+                  ? ((profile?.preferences as Record<string, unknown>).custom_subjects as string[])
+                  : undefined
+              }
+            />
           </section>
 
           {/* Real-time Study Buddies Presence Room (5 cols) */}

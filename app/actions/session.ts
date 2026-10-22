@@ -312,3 +312,62 @@ export async function stopStudySession(
   return { success: true, session: completedSession as StudySession };
 }
 
+/**
+ * Persist user's custom focus subjects into their profile preferences in Supabase.
+ */
+export async function saveUserCustomSubjects(
+  subjects: string[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const cleanSubjects = subjects
+      .filter((s) => typeof s === "string" && s.trim().length > 0)
+      .map((s) => s.trim().slice(0, 50))
+      .slice(0, 30);
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("preferences")
+      .eq("id", user.id)
+      .single();
+
+    const currentPreferences =
+      profile?.preferences && typeof profile.preferences === "object" && !Array.isArray(profile.preferences)
+        ? (profile.preferences as Record<string, unknown>)
+        : {};
+
+    const updatedPreferences = {
+      ...currentPreferences,
+      custom_subjects: cleanSubjects,
+    };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        preferences: updatedPreferences,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to save subjects",
+    };
+  }
+}
+
+

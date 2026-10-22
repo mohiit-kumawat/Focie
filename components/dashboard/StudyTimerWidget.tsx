@@ -19,10 +19,13 @@ import {
 } from "lucide-react";
 import { useStudyTimer } from "@/hooks/useStudyTimer";
 import { soundEngine } from "@/lib/audio/chime";
+import { saveUserCustomSubjects } from "@/app/actions/session";
 import type { SessionMode, StudySession } from "@/types/database";
 
 interface StudyTimerWidgetProps {
   onSessionComplete?: (session: StudySession) => void;
+  initialSubjects?: string[];
+  userId?: string;
 }
 
 const DEFAULT_PRESET_SUBJECTS = [
@@ -45,11 +48,25 @@ const QUICK_SUGGESTIONS = [
 
 const STORAGE_KEY = "focie_custom_subjects_v1";
 
-export function StudyTimerWidget({ onSessionComplete }: StudyTimerWidgetProps) {
+export function StudyTimerWidget({
+  onSessionComplete,
+  initialSubjects,
+  userId,
+}: StudyTimerWidgetProps) {
   const [selectedMode, setSelectedMode] = useState<SessionMode>("pomodoro");
   const [targetMinutes, setTargetMinutes] = useState<number>(25);
-  const [subjectTag, setSubjectTag] = useState<string>("Deep Work ⚡");
-  const [subjects, setSubjects] = useState<string[]>(DEFAULT_PRESET_SUBJECTS);
+  const [subjects, setSubjects] = useState<string[]>(() => {
+    if (initialSubjects && initialSubjects.length > 0) {
+      return initialSubjects;
+    }
+    return DEFAULT_PRESET_SUBJECTS;
+  });
+  const [subjectTag, setSubjectTag] = useState<string>(() => {
+    if (initialSubjects && initialSubjects.length > 0) {
+      return initialSubjects[0]!;
+    }
+    return "Deep Work ⚡";
+  });
   const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
   const [showAddInput, setShowAddInput] = useState<boolean>(false);
   const [newSubjectName, setNewSubjectName] = useState<string>("");
@@ -60,29 +77,62 @@ export function StudyTimerWidget({ onSessionComplete }: StudyTimerWidgetProps) {
   const [fumiBounce, setFumiBounce] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.getMuted());
 
-  // Load custom subjects from localStorage on mount
+  // Load custom subjects from localStorage on mount & synchronize with server preferences
   useEffect(() => {
+    const userStorageKey = userId ? `focie_custom_subjects_${userId}` : STORAGE_KEY;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      // 1. Try user-specific localStorage first
+      const stored = localStorage.getItem(userStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSubjects(parsed);
-          setSubjectTag(parsed[0]);
+          setSubjectTag((prev) => (parsed.includes(prev) ? prev : parsed[0]!));
+          return;
         }
+      }
+
+      // 2. Fall back to generic localStorage key if available
+      const legacy = localStorage.getItem(STORAGE_KEY);
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSubjects(parsed);
+          setSubjectTag((prev) => (parsed.includes(prev) ? prev : parsed[0]!));
+          if (userId) {
+            localStorage.setItem(userStorageKey, JSON.stringify(parsed));
+            saveUserCustomSubjects(parsed).catch(() => {});
+          }
+          return;
+        }
+      }
+
+      // 3. If initialSubjects was provided from Supabase database, seed localStorage
+      if (initialSubjects && initialSubjects.length > 0) {
+        setSubjects(initialSubjects);
+        setSubjectTag((prev) => (initialSubjects.includes(prev) ? prev : initialSubjects[0]!));
+        localStorage.setItem(userStorageKey, JSON.stringify(initialSubjects));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSubjects));
       }
     } catch {
       // Ignore storage read errors
     }
-  }, []);
+  }, [userId, initialSubjects]);
 
   const persistSubjects = (newList: string[]) => {
     setSubjects(newList);
+    const userStorageKey = userId ? `focie_custom_subjects_${userId}` : STORAGE_KEY;
     try {
+      localStorage.setItem(userStorageKey, JSON.stringify(newList));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
     } catch {
       // Ignore storage write errors
     }
+
+    // Persist to user profile preferences in Supabase
+    saveUserCustomSubjects(newList).catch((err) => {
+      console.error("Failed to persist custom subjects to Supabase:", err);
+    });
   };
 
   const handleAddSubject = (nameToAdd?: string) => {
