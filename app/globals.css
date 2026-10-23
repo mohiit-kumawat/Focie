@@ -3,6 +3,8 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
+  --font-nunito: 'Nunito', system-ui, sans-serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
   --background: #FFFDF9;
   --foreground: #4A3E4D;
   --bg-main: #FFFDF9;

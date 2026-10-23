@@ -20,6 +20,7 @@ import {
 import { useStudyTimer } from "@/hooks/useStudyTimer";
 import { soundEngine } from "@/lib/audio/chime";
 import { saveUserCustomSubjects } from "@/app/actions/session";
+import { FocusAudioPlayer } from "@/components/dashboard/FocusAudioPlayer";
 import type { SessionMode, StudySession } from "@/types/database";
 
 interface StudyTimerWidgetProps {
@@ -351,11 +352,14 @@ export function StudyTimerWidget({
             </div>
           )}
 
+          {/* Study Focus Audio Player (Lo-Fi & Alert Beats) */}
+          <FocusAudioPlayer timerState={timer.state} />
+
           {/* Sound Mute Toggle */}
           <button
             onClick={handleToggleSound}
             className="p-2 rounded-xl border border-[#E9DFD8] dark:border-[#40354F] bg-white dark:bg-[#302641] hover:bg-[#FFEBF0] dark:hover:bg-[#40354F] hover:scale-110 active:scale-90 text-[#7D6E7E] dark:text-[#B9AEC9] transition-all duration-150 cursor-pointer shadow-2xs"
-            title={isMuted ? "Sound muted (click to unmute)" : "Sound on (click to mute)"}
+            title={isMuted ? "Bell chimes muted" : "Bell chimes on"}
           >
             {isMuted ? (
               <VolumeX className="w-3.5 h-3.5 text-[#A49AAB]" />
