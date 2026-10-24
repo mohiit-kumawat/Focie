@@ -32,6 +32,9 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
   const activeSegmentStartRef = useRef<number | null>(null);
   const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
   const hasChimedTargetRef = useRef<boolean>(false);
+  const autoCompletingRef = useRef<boolean>(false);
+  const sessionRef = useRef<StudySession | null>(session);
+  sessionRef.current = session;
 
   // Helper: Format seconds to MM:SS or HH:MM:SS
   const formatTime = (totalSeconds: number): string => {
@@ -48,7 +51,7 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
     return `${pad(minutes)}:${pad(seconds)}`;
   };
 
-  // Sync elapsed time from authoritative timestamps
+  // Sync elapsed time from authoritative timestamps with ceiling clamping for Pomodoro
   const syncElapsedSeconds = useCallback(() => {
     if (!session) {
       setElapsedSeconds(0);
@@ -57,15 +60,21 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
 
     const baseAccumulated = session.accumulated_seconds || 0;
 
+    let total = baseAccumulated;
     if (session.state === "active" && activeSegmentStartRef.current) {
       const nowMs = Date.now();
       const currentSegmentSec = Math.max(
         0,
         Math.floor((nowMs - activeSegmentStartRef.current) / 1000)
       );
-      setElapsedSeconds(baseAccumulated + currentSegmentSec);
+      total = baseAccumulated + currentSegmentSec;
+    }
+
+    if (session.mode === "pomodoro") {
+      const targetSec = (session.target_minutes || 25) * 60;
+      setElapsedSeconds(Math.min(targetSec, total));
     } else {
-      setElapsedSeconds(baseAccumulated);
+      setElapsedSeconds(total);
     }
   }, [session]);
 
@@ -84,6 +93,7 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
         setSession(data.session);
         activeSegmentStartRef.current = Date.now();
         hasChimedTargetRef.current = false;
+        autoCompletingRef.current = false;
       } else if (data.type === "SESSION_PAUSED") {
         setSession(data.session);
         activeSegmentStartRef.current = null;
@@ -92,6 +102,7 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
         setSession(null);
         activeSegmentStartRef.current = null;
         setElapsedSeconds(0);
+        autoCompletingRef.current = false;
         options?.onSessionComplete?.(data.session);
       }
     };
@@ -159,15 +170,58 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
     };
   }, [session, syncElapsedSeconds]);
 
-  // Pomodoro target reach chime
+  const stop = useCallback(
+    async (notes?: string) => {
+      const currentSession = sessionRef.current;
+      if (!currentSession) return;
+      setActionLoading(true);
+      setError(null);
+      try {
+        const result = await stopStudySession(currentSession.id, notes);
+        if (!result.success || !result.session) {
+          setError(result.error || "Failed to stop session");
+          return;
+        }
+        activeSegmentStartRef.current = null;
+        autoCompletingRef.current = false;
+        const finished = result.session;
+        setSession(null);
+        setElapsedSeconds(0);
+        soundEngine.playCompletionChime();
+        broadcastChannelRef.current?.postMessage({
+          type: "SESSION_STOPPED",
+          session: finished,
+        });
+        options?.onSessionComplete?.(finished);
+        return finished;
+      } catch {
+        setError("Failed to stop session.");
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [options]
+  );
+
+  // Pomodoro target reach chime and automatic auto-completion
   useEffect(() => {
-    if (!session || session.mode !== "pomodoro" || session.state !== "active") return;
-    const targetTotalSec = (session.target_minutes || 25) * 60;
-    if (elapsedSeconds >= targetTotalSec && !hasChimedTargetRef.current) {
-      hasChimedTargetRef.current = true;
-      soundEngine.playCompletionChime();
+    if (!session || session.mode !== "pomodoro" || session.state !== "active") {
+      autoCompletingRef.current = false;
+      return;
     }
-  }, [session, elapsedSeconds]);
+    const targetTotalSec = (session.target_minutes || 25) * 60;
+    if (elapsedSeconds >= targetTotalSec) {
+      if (!hasChimedTargetRef.current) {
+        hasChimedTargetRef.current = true;
+        soundEngine.playCompletionChime();
+      }
+
+      if (!autoCompletingRef.current) {
+        autoCompletingRef.current = true;
+        stop();
+      }
+    }
+  }, [session, elapsedSeconds, stop]);
 
   // Actions
   const start = async (mode: SessionMode = "pomodoro", targetMinutes: number = 25, subject: string = "General Study") => {
@@ -187,6 +241,7 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
 
       activeSegmentStartRef.current = Date.now();
       hasChimedTargetRef.current = false;
+      autoCompletingRef.current = false;
       setSession(result.session);
       setElapsedSeconds(0);
       soundEngine.playStartChime();
@@ -236,6 +291,7 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
         return;
       }
       activeSegmentStartRef.current = Date.now();
+      autoCompletingRef.current = false;
       setSession(result.session);
       soundEngine.playStartChime(0.15);
       broadcastChannelRef.current?.postMessage({
@@ -244,34 +300,6 @@ export function useStudyTimer(options?: UseStudyTimerOptions) {
       });
     } catch {
       setError("Failed to resume session.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const stop = async (notes?: string) => {
-    if (!session) return;
-    setActionLoading(true);
-    setError(null);
-    try {
-      const result = await stopStudySession(session.id, notes);
-      if (!result.success || !result.session) {
-        setError(result.error || "Failed to stop session");
-        return;
-      }
-      activeSegmentStartRef.current = null;
-      const finished = result.session;
-      setSession(null);
-      setElapsedSeconds(0);
-      soundEngine.playCompletionChime();
-      broadcastChannelRef.current?.postMessage({
-        type: "SESSION_STOPPED",
-        session: finished,
-      });
-      options?.onSessionComplete?.(finished);
-      return finished;
-    } catch {
-      setError("Failed to stop session.");
     } finally {
       setActionLoading(false);
     }

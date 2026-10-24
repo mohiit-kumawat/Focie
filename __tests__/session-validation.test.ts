@@ -126,6 +126,61 @@ describe("Phase 2: Study Session & Friendship Validation Tests", () => {
       expect(s2Duration).toBe(600);
       expect(totalFocusedSeconds).toBe(1500); // exactly 25 minutes, ignoring the 5-min pause
     });
+
+    it("clamps Pomodoro duration to target ceiling when user walks away without stopping", () => {
+      // User starts 25-minute Pomodoro (1500 seconds) and leaves tab open for 3 hours (10,800 seconds)
+      const targetMinutes = 25;
+      const maxAllowedSeconds = targetMinutes * 60; // 1500s
+      const accumulatedSeconds = 0;
+      const rawElapsedSeconds = 3 * 3600; // 10800s
+
+      const neededSeconds = Math.max(0, maxAllowedSeconds - accumulatedSeconds);
+      const additionalSeconds = Math.min(rawElapsedSeconds, neededSeconds);
+      const finalSeconds = Math.min(maxAllowedSeconds, accumulatedSeconds + additionalSeconds);
+
+      expect(additionalSeconds).toBe(1500);
+      expect(finalSeconds).toBe(1500);
+    });
+
+    it("clamps multi-segment Pomodoro sessions so total accumulated never exceeds target", () => {
+      // User studied 15 minutes (900s), paused, resumed, and left desk for 2 hours (7200s)
+      const targetMinutes = 25;
+      const maxAllowedSeconds = targetMinutes * 60; // 1500s
+      const accumulatedSeconds = 900; // 15 mins
+      const rawSecondSegmentSeconds = 7200; // 2 hours
+
+      const neededSeconds = Math.max(0, maxAllowedSeconds - accumulatedSeconds); // 600s
+      const segment2Seconds = Math.min(rawSecondSegmentSeconds, neededSeconds);
+      const finalSeconds = Math.min(maxAllowedSeconds, accumulatedSeconds + segment2Seconds);
+
+      expect(neededSeconds).toBe(600);
+      expect(segment2Seconds).toBe(600);
+      expect(finalSeconds).toBe(1500);
+      expect(accumulatedSeconds + segment2Seconds).toBe(1500);
+    });
+
+    it("allows stopwatch mode to continue without ceiling clamping", () => {
+      const computeFinalSeconds = (mode: string, accumulated: number, rawElapsed: number) => {
+        return mode === "pomodoro"
+          ? Math.min(25 * 60, accumulated + rawElapsed)
+          : accumulated + rawElapsed;
+      };
+
+      const finalSeconds = computeFinalSeconds("stopwatch", 0, 5400);
+      expect(finalSeconds).toBe(5400); // unconstrained for open study
+    });
+
+    it("calculates accurate effective end timestamp during server lazy reconciliation", () => {
+      const startMs = new Date("2026-10-24T10:00:00.000Z").getTime();
+      const targetMinutes = 25;
+      const maxAllowedSeconds = targetMinutes * 60; // 1500s
+      const accumulated = 0;
+
+      const neededDuration = Math.max(0, maxAllowedSeconds - accumulated);
+      const effectiveEndIso = new Date(startMs + neededDuration * 1000).toISOString();
+
+      expect(effectiveEndIso).toBe("2026-10-24T10:25:00.000Z");
+    });
   });
 });
 

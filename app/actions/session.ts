@@ -37,7 +37,72 @@ export async function getActiveStudySession(): Promise<StudySession | null> {
 
   if (error || !data) return null;
 
-  return data as StudySession;
+  const session = data as StudySession;
+
+  // Defensive Lazy Reconciliation: If Pomodoro target was exceeded while user was away,
+  // auto-complete it on the server and cap accumulated time to target_minutes!
+  if (session.mode === "pomodoro") {
+    const maxAllowed = (session.target_minutes || 25) * 60;
+    const accumulated = session.accumulated_seconds || 0;
+
+    if (session.state === "paused") {
+      if (accumulated >= maxAllowed) {
+        await supabase
+          .from("study_sessions")
+          .update({
+            state: "completed",
+            ended_at: session.paused_at || new Date().toISOString(),
+            accumulated_seconds: maxAllowed,
+          })
+          .eq("id", session.id);
+        return null;
+      }
+    } else if (session.state === "active") {
+      const { data: openSegment } = await supabase
+        .from("study_session_segments")
+        .select("*")
+        .eq("session_id", session.id)
+        .eq("user_id", user.id)
+        .is("ended_at", null)
+        .order("started_at", { ascending: false })
+        .maybeSingle();
+
+      const nowMs = Date.now();
+      const segStartMs = openSegment
+        ? new Date(openSegment.started_at).getTime()
+        : new Date(session.started_at).getTime();
+      const segElapsed = Math.max(0, Math.floor((nowMs - segStartMs) / 1000));
+      const totalElapsed = accumulated + segElapsed;
+
+      if (totalElapsed >= maxAllowed) {
+        const neededSegDuration = Math.max(0, maxAllowed - accumulated);
+        const effectiveEnd = new Date(segStartMs + neededSegDuration * 1000).toISOString();
+
+        if (openSegment) {
+          await supabase
+            .from("study_session_segments")
+            .update({
+              ended_at: effectiveEnd,
+              duration_seconds: neededSegDuration,
+            })
+            .eq("id", openSegment.id);
+        }
+
+        await supabase
+          .from("study_sessions")
+          .update({
+            state: "completed",
+            ended_at: effectiveEnd,
+            accumulated_seconds: maxAllowed,
+          })
+          .eq("id", session.id);
+
+        return null;
+      }
+    }
+  }
+
+  return session;
 }
 
 /**
@@ -125,7 +190,19 @@ export async function pauseStudySession(
 
   const now = new Date().toISOString();
 
-  // 1. Fetch open segment
+  // 1. Fetch current session
+  const { data: currentSession } = await supabase
+    .from("study_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!currentSession) {
+    return { success: false, error: "Session not found" };
+  }
+
+  // 2. Fetch open segment
   const { data: openSegment } = await supabase
     .from("study_session_segments")
     .select("*")
@@ -136,36 +213,72 @@ export async function pauseStudySession(
     .maybeSingle();
 
   let segmentSeconds = 0;
+  let effectiveEnd = now;
+
   if (openSegment) {
-    segmentSeconds = Math.max(
+    const rawSegmentSeconds = Math.max(
       0,
       Math.floor(
         (new Date(now).getTime() - new Date(openSegment.started_at).getTime()) / 1000
       )
     );
 
-    // Close the segment
+    if (currentSession.mode === "pomodoro") {
+      const maxAllowed = (currentSession.target_minutes || 25) * 60;
+      const acc = currentSession.accumulated_seconds || 0;
+      const needed = Math.max(0, maxAllowed - acc);
+      segmentSeconds = Math.min(rawSegmentSeconds, needed);
+      effectiveEnd = new Date(
+        new Date(openSegment.started_at).getTime() + segmentSeconds * 1000
+      ).toISOString();
+    } else {
+      segmentSeconds = rawSegmentSeconds;
+      effectiveEnd = now;
+    }
+
+    // Close the segment with accurate duration
     await supabase
       .from("study_session_segments")
       .update({
-        ended_at: now,
+        ended_at: effectiveEnd,
         duration_seconds: segmentSeconds,
       })
       .eq("id", openSegment.id);
   }
 
-  // 2. Fetch current session to calculate updated accumulated seconds
-  const { data: currentSession } = await supabase
-    .from("study_sessions")
-    .select("accumulated_seconds")
-    .eq("id", sessionId)
-    .eq("user_id", user.id)
-    .single();
+  const acc = currentSession.accumulated_seconds || 0;
+  let totalAccumulated = acc + segmentSeconds;
 
-  const totalAccumulated =
-    (currentSession?.accumulated_seconds || 0) + segmentSeconds;
+  // 3. For Pomodoro, clamp to target and mark completed if ceiling reached
+  if (currentSession.mode === "pomodoro") {
+    const maxAllowed = (currentSession.target_minutes || 25) * 60;
+    if (totalAccumulated >= maxAllowed) {
+      totalAccumulated = maxAllowed;
 
-  // 3. Update session to paused
+      const { data: completedSession, error: completeError } = await supabase
+        .from("study_sessions")
+        .update({
+          state: "completed",
+          ended_at: effectiveEnd,
+          accumulated_seconds: maxAllowed,
+        })
+        .eq("id", sessionId)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      if (completeError || !completedSession) {
+        return {
+          success: false,
+          error: completeError?.message || "Failed to complete session",
+        };
+      }
+
+      return { success: true, session: completedSession as StudySession };
+    }
+  }
+
+  // 4. Update session to paused
   const { data: updatedSession, error: updateError } = await supabase
     .from("study_sessions")
     .update({
@@ -233,7 +346,7 @@ export async function resumeStudySession(
 }
 
 /**
- * Stop/complete the study session, calculating final duration.
+ * Stop/complete the study session, calculating final duration with Pomodoro ceiling clamping.
  */
 export async function stopStudySession(
   sessionId: string,
@@ -253,50 +366,76 @@ export async function stopStudySession(
 
   const now = new Date().toISOString();
 
-  // 1. If currently in an open segment, close it
+  // 1. Fetch current session
+  const { data: currentSession } = await supabase
+    .from("study_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!currentSession) {
+    return { success: false, error: "Session not found" };
+  }
+
+  // 2. If currently in an open segment, close it
   const { data: openSegment } = await supabase
     .from("study_session_segments")
     .select("*")
     .eq("session_id", sessionId)
     .eq("user_id", user.id)
     .is("ended_at", null)
+    .order("started_at", { ascending: false })
     .maybeSingle();
 
   let additionalSeconds = 0;
+  let effectiveEnd = now;
+
   if (openSegment) {
-    additionalSeconds = Math.max(
+    const rawAdditional = Math.max(
       0,
       Math.floor(
         (new Date(now).getTime() - new Date(openSegment.started_at).getTime()) / 1000
       )
     );
 
+    if (currentSession.mode === "pomodoro") {
+      const maxAllowed = (currentSession.target_minutes || 25) * 60;
+      const acc = currentSession.accumulated_seconds || 0;
+      const needed = Math.max(0, maxAllowed - acc);
+      additionalSeconds = Math.min(rawAdditional, needed);
+      effectiveEnd = new Date(
+        new Date(openSegment.started_at).getTime() + additionalSeconds * 1000
+      ).toISOString();
+    } else {
+      additionalSeconds = rawAdditional;
+      effectiveEnd = now;
+    }
+
     await supabase
       .from("study_session_segments")
       .update({
-        ended_at: now,
+        ended_at: effectiveEnd,
         duration_seconds: additionalSeconds,
       })
       .eq("id", openSegment.id);
   }
 
-  // 2. Calculate final accumulated seconds
-  const { data: currentSession } = await supabase
-    .from("study_sessions")
-    .select("accumulated_seconds")
-    .eq("id", sessionId)
-    .eq("user_id", user.id)
-    .single();
+  // 3. Calculate final accumulated seconds
+  const acc = currentSession.accumulated_seconds || 0;
+  let finalSeconds = acc + additionalSeconds;
 
-  const finalSeconds =
-    (currentSession?.accumulated_seconds || 0) + additionalSeconds;
+  if (currentSession.mode === "pomodoro") {
+    const maxAllowed = (currentSession.target_minutes || 25) * 60;
+    finalSeconds = Math.min(maxAllowed, finalSeconds);
+  }
 
-  // 3. Mark session as completed
+  // 4. Mark session as completed
   const { data: completedSession, error } = await supabase
     .from("study_sessions")
     .update({
       state: "completed",
-      ended_at: now,
+      ended_at: effectiveEnd,
       accumulated_seconds: finalSeconds,
       notes: validation.data.notes ?? null,
     })
